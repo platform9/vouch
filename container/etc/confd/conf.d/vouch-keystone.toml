@@ -1,0 +1,14 @@
+[template]
+src = 'vouch-keystone.conf'
+dest = '/etc/vouch/vouch-keystone.conf'
+owner = 'root'
+mode = '0644'
+keys = [
+    '/fqdn',
+    '/vouch/vault/url',
+    '/vouch/vault/token',
+    '/vouch/ca_name',
+    '/vouch/ca_common_name',
+    '/vouch/ca_signing_role'
+]
+reload_cmd = 'supervisorctl -c /etc/supervisord-keystone.conf restart vouch'

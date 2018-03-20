@@ -4,41 +4,35 @@ import logging
 import os
 import paste.deploy
 import paste.httpserver
+import threading
 import vouch.conf
 
 from argparse import ArgumentParser
 
-PECAN_CONF = 'config.py'
-PASTE_INI = 'paste.ini'
-VOUCH_CONF = 'vouch.conf'
-
 logging.basicConfig(level=logging.DEBUG,
-                    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+                    format='%(asctime)s - %(name)s - %(threadName)s - '
+                           '%(levelname)s - %(message)s')
 LOG = logging.getLogger(__file__)
 
 def parse_args():
     parser = ArgumentParser(
         description='Run the vouch service',
-        epilog='Example: vouch --config-dir /etc/pf9/vouch')
-    parser.add_argument('--config-dir', default=os.getcwd(),
-        help='Directory where we can find paste.ini, pecan config.py and '
-             'vouch.conf (yaml service configuration)')
+        epilog='Example: vouch --config /etc/vouch/vouch-keystone.conf')
+    parser.add_argument('--config', required=True,
+        help='YAML configuration file.')
     return parser.parse_args()
 
 def run():
     args = parse_args()
-    pecan_conf = os.path.abspath(os.path.join(args.config_dir, PECAN_CONF))
-    paste_ini = os.path.abspath(os.path.join(args.config_dir, PASTE_INI))
-    vouch_conf = os.path.abspath(os.path.join(args.config_dir, VOUCH_CONF))
-    for path in [pecan_conf, paste_ini, vouch_conf]:
-        if not os.path.isfile(path):
-            raise OSError(errno.ENOENT,
-                "Could not locate '%s' in config dir '%s'" %
-                (path, args.config_dir))
-    LOG.info('Starting the vouch signing service.')
+    vouch_conf = os.path.abspath(args.config)
     vouch.conf.set_config(vouch_conf)
+    from vouch.conf import CONF
+    pecan_conf = CONF['pecan_conf']
+    paste_ini = CONF['paste_ini']
+    LOG.info('Starting the vouch signing service.')
     app = paste.deploy.loadapp('config:%s' % paste_ini,
-                               global_conf = {'config' : pecan_conf})
-    paste.httpserver.serve(app, port = 8558)
+                               global_conf={'config' : pecan_conf},
+                               name=CONF['paste_appname'])
+    paste.httpserver.serve(app, host=CONF['listen'])
 
 run()
