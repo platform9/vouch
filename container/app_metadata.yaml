@@ -1,0 +1,26 @@
+---
+- name: vouch-keystone
+  command:
+    - /usr/local/bin/supervisord
+    - --config
+    - /etc/supervisord-keystone.conf
+  endpoints:
+    - name: vouch-public
+      httpPath: /vouch
+      port: 8448
+  logfiles:
+    - path: /var/log/vouch.log
+    - path: /var/log/confd.log
+
+- name: vouch-noauth
+  command:
+    - /usr/local/bin/supervisord
+    - --config
+    - /etc/supervisord-noauth.conf
+  endpoints:
+    - name: vouch-private
+      port: 8558
+  logfiles:
+    - path: /var/log/vouch.log
+    - path: /var/log/confd.log
+
