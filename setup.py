@@ -14,7 +14,7 @@ setup(
         'pecan',
         'python-memcached'
     ],
-    scripts=['bin/vouch'],
+    scripts=['bin/vouch', 'bin/init-region'],
     test_suite='nose.collector',
     tests_require=['nose', 'mock'],
     zip_safe=False,

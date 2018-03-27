@@ -7,7 +7,8 @@ RUN curl -#fL https://github.com/kelseyhightower/confd/releases/download/v0.15.0
 # install vouch and supervisor
 COPY vouch-sdist.tgz firkinize-sdist.tgz /tmp/
 RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz /tmp/firkinize-sdist.tgz supervisor \
- && rm -f /tmp/vouch-sdist.tgz /tmp/firkinize-sdist.tgz
+ && rm -f /tmp/vouch-sdist.tgz /tmp/firkinize-sdist.tgz \
+ && ln -s /usr/local/bin/init-region /root/init-region
 
 COPY etc/ /etc
 

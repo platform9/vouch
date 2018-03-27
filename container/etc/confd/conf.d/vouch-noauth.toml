@@ -6,7 +6,7 @@ mode = '0644'
 keys = [
     '/fqdn',
     '/vouch/vault/url',
-    '/vouch/vault/token',
+    '/vouch/vault/host_signing_token',
     '/vouch/ca_name',
     '/vouch/ca_common_name',
     '/vouch/ca_signing_role'

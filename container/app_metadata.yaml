@@ -8,6 +8,7 @@
     - name: vouch-public
       httpPath: /vouch
       port: 8448
+      rewritePath: "/"
   logfiles:
     - path: /var/log/vouch.log
     - path: /var/log/confd.log
