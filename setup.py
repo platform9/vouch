@@ -7,12 +7,12 @@ setup(
     author='',
     author_email='',
     install_requires=[
-        'cryptography',
-        'keystonemiddleware',
-        'Paste',
-        'PasteDeploy',
-        'pecan',
-        'python-memcached'
+        'cryptography==2.6.1',
+        'keystonemiddleware==6.0.0',
+        'Paste==3.0.8',
+        'PasteDeploy==2.0.1',
+        'pecan==1.3.2',
+        'python-memcached==1.59'
     ],
     scripts=['bin/vouch', 'bin/init-region'],
     test_suite='nose.collector',

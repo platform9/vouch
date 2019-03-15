@@ -43,16 +43,18 @@ stage: dist
 $(BUILD_DIR):
 	mkdir -p $@
 
+$(VENV):
+	(test -d $(VENV) || virtualenv $(VENV)) && \
+	$(VENV)/bin/python $(VENV)/bin/pip install pip==19.0.3 setuptools==39.0.1
+
 $(BUILD_DIR)/container-tag: $(BUILD_DIR)
 	echo -ne "$(IMAGE_TAG)" >$@
 
-unit-test:
-	(test -d $(VENV) || virtualenv $(VENV)) && \
+unit-test: $(VENV)
 	$(VENV)/bin/python $(VENV)/bin/pip install -e$(SRCROOT) -e$(FIRKINROOT) nose && \
 	$(VENV)/bin/nosetests -vd .
 
-$(VENV)/bin/y2j:
-	(test -d $(VENV) || virtualenv $(VENV)) && \
+$(VENV)/bin/y2j: $(VENV)
 	$(VENV)/bin/python $(VENV)/bin/pip install -e$(FIRKINROOT)
 
 image: stage $(VENV)/bin/y2j
@@ -71,6 +73,7 @@ push: image $(BUILD_DIR)/container-tag
 		docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG))
 
 clean:
+	rm -rf $(VENV)
 	rm -rf $(STAGE)
 	rm -rf $(SRCROOT)/dist
 	rm -rf $(FIRKINROOT)/dist
