@@ -1,10 +1,8 @@
 #!/usr/bin/python
-import errno
 import logging
 import os
 import paste.deploy
 import paste.httpserver
-import threading
 import vouch.conf
 
 from argparse import ArgumentParser

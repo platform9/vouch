@@ -11,7 +11,7 @@ from pecan import expose
 from pecan.rest import RestController
 
 from vouch.conf import CONF
-from firkinize.vault.ca import VaultCA
+from vaultlib.ca import VaultCA
 
 LOG = logging.getLogger(__name__)
 

@@ -9,7 +9,7 @@ import sys
 
 from argparse import ArgumentParser
 from firkinize.configstore.consul import Consul
-from firkinize.vault.ca import VaultCA
+from vaultlib.ca import VaultCA
 
 logging.basicConfig(level=logging.DEBUG)
 
