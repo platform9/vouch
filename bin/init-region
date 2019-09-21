@@ -72,8 +72,8 @@ def parse_args():
     parser.add_argument('--region-id',
         help='The region id for which to bootstrap the keystone endpoint',
         required=True)
-    parser.add_argument('--consul-token',
-            help='consul access token, also looks for '
+    parser.add_argument('--config-token',
+            help='config access token, also looks for '
                  'env[\'CONSUL_HTTP_TOKEN\']')
     return parser.parse_args()
 
@@ -148,7 +148,7 @@ def create_host_signing_token(vault, consul, customer_id, rolename):
 def main():
     args = parse_args()
     config_url = args.config_url or os.environ.get('CONSUL_HTTP_ADDR', None)
-    token = args.consul_token or os.environ.get('CONSUL_HTTP_TOKEN', None)
+    token = args.config_token or os.environ.get('CONSUL_HTTP_TOKEN', None)
     consul = Consul(config_url, token=token)
     vault = get_vault_admin_client(consul, args.customer_id)
     rolename = create_host_signing_role(vault, consul, args.customer_id)
