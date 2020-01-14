@@ -1,4 +1,3 @@
-
 # pylint: disable=too-few-public-methods
 
 import logging
@@ -15,9 +14,15 @@ from vaultlib.ca import VaultCA
 
 LOG = logging.getLogger(__name__)
 
+
 class CAController(RestController):
     def __init__(self):
-        self._vault = VaultCA(CONF['vault_addr'], CONF['vault_token'])
+        self._vault = VaultCA(
+            CONF['vault_addr'],
+            CONF['vault_token'],
+            CONF['ca_name'],
+            CONF['ca_common_name'],
+        )
 
     @expose('json')
     def get(self):
@@ -28,7 +33,7 @@ class CAController(RestController):
         ca_name = CONF['ca_name']
         LOG.info('Fetching current ca certificate for %s.', ca_name)
         try:
-            resp = self._vault.get_ca(ca_name)
+            resp = self._vault.get_ca()
             pecan.response.status = 200
             pecan.response.json = resp.json()['data']
         except requests.HTTPError as e:
@@ -49,9 +54,9 @@ class CAController(RestController):
 
         LOG.info('Refreshing ca certificate for %s.', ca_name)
         try:
-            resp_old = self._vault.get_ca(ca_name)
+            resp_old = self._vault.get_ca()
             resp_json['previous'] = resp_old.json()['data']
-            resp_new = self._vault.new_ca_root(ca_name, ca_common_name)
+            resp_new = self._vault.new_ca_root(ca_common_name)
             resp_json['new'] = resp_new.json()['data']
             pecan.response.status = 200
             pecan.response.json = resp_json
@@ -63,7 +68,12 @@ class CAController(RestController):
 
 class CertController(RestController):
     def __init__(self):
-        self._vault = VaultCA(CONF['vault_addr'], CONF['vault_token'])
+        self._vault = VaultCA(
+            CONF['vault_addr'],
+            CONF['vault_token'],
+            CONF['ca_name'],
+            CONF['ca_common_name'],
+        )
 
     @expose('json')
     def post(self):
@@ -90,8 +100,8 @@ class CertController(RestController):
             alt_names = req.get('alt_names', [])
             ttl = req.get('ttl', '730h')
             try:
-                resp = self._vault.sign_csr(ca_name, signing_role, csr,
-                        common_name, ip_sans, alt_names, ttl)
+                resp = self._vault.sign_csr(signing_role, csr,
+                                            common_name, ip_sans, alt_names, ttl)
                 pecan.response.json = resp.json()['data']
                 pecan.response.status = 200
             except requests.HTTPError as e:
@@ -99,6 +109,7 @@ class CertController(RestController):
                 pecan.response.json = e.response.json()
 
         return pecan.response
+
 
 class SignController(object):
     ca = CAController()
