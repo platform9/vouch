@@ -41,9 +41,12 @@ $(FIRKIN_DIST): $(FIRKIN_CODE)
 	python setup.py sdist && \
 	cp dist/firkin* $@
 
+# Vault version pinned to 208daedff8dcba4d922c8b385666c637c7748b75,
+# in order to do proper releasing around backwards incompatible changes.
 $(VAULT_DIST): $(VAULT_CODE)
 	cd $(VAULTROOT) && \
 	rm -f dist/vault* && \
+	git checkout 208daedff8dcba4d922c8b385666c637c7748b75 && \
 	python setup.py sdist && \
 	cp dist/vault* $@
 
