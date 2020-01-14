@@ -63,19 +63,21 @@ vault_servers/<vault_server_id>
 
 """
 
+
 def parse_args():
     parser = ArgumentParser(description='Initialize vouch signing service')
     parser.add_argument('--config-url', default='http://localhost:8500',
-        help='Address of the config node, default http://localhost:8500')
+                        help='Address of the config node, default http://localhost:8500')
     parser.add_argument('--customer-id',
-        help='The keystone customer id', required=True)
+                        help='The keystone customer id', required=True)
     parser.add_argument('--region-id',
-        help='The region id for which to bootstrap the keystone endpoint',
-        required=True)
+                        help='The region id for which to bootstrap the keystone endpoint',
+                        required=True)
     parser.add_argument('--config-token',
-            help='config access token, also looks for '
-                 'env[\'CONSUL_HTTP_TOKEN\']')
+                        help='config access token, also looks for '
+                             'env[\'CONSUL_HTTP_TOKEN\']')
     return parser.parse_args()
+
 
 def random_string(length=16):
     """
@@ -86,6 +88,7 @@ def random_string(length=16):
     return ''.join([random.SystemRandom().choice(string.letters)] +
                    [random.SystemRandom().choice(secret_chars)
                     for _ in range(length - 1)])
+
 
 def add_keystone_user(consul, customer_uuid):
     """
@@ -120,30 +123,36 @@ def add_keystone_user(consul, customer_uuid):
         consul.kv_put_txn(updates)
         LOG.info('Added vouch user')
 
+
 def get_vault_admin_client(consul, customer_uuid):
+    ca_name = consul.kv_get('customers/%s/vouch/ca_name' % customer_uuid)
+    ca_common_name = consul.kv_get('customers/%s/vouch/ca_common_name' % customer_uuid)
+
     vault_server_key = consul.kv_get('customers/%s/vouch/vault/server_key'
-                                    % customer_uuid)
+                                     % customer_uuid)
     with consul.prefix(vault_server_key):
         url = consul.kv_get('url')
         token = consul.kv_get('admin_token')
-    return VaultCA(url, token)
+
+    return VaultCA(url, token, ca_name, ca_common_name)
+
 
 def create_host_signing_role(vault, consul, customer_id):
-    ca_name = consul.kv_get('customers/%s/vouch/ca_name' % customer_id)
     rolename = 'hosts-%s' % customer_id
-    vault.create_signing_role(ca_name, rolename)
+    vault.create_signing_role(rolename)
     consul.kv_put('customers/%s/vouch/ca_signing_role' % customer_id,
                   rolename)
     return rolename
 
+
 def create_host_signing_token(vault, consul, customer_id, rolename):
-    ca_name = consul.kv_get('customers/%s/vouch/ca_name' % customer_id)
     policy_name = 'hosts-%s' % customer_id
-    vault.create_signing_token_policy(ca_name, rolename, policy_name)
+    vault.create_signing_token_policy(rolename, policy_name)
     token_info = vault.create_token(policy_name)
     consul.kv_put('customers/%s/vouch/vault/url' % customer_id, vault.addr)
     consul.kv_put('customers/%s/vouch/vault/host_signing_token' % customer_id,
                   token_info.json()['auth']['client_token'])
+
 
 def main():
     args = parse_args()
@@ -154,6 +163,7 @@ def main():
     rolename = create_host_signing_role(vault, consul, args.customer_id)
     create_host_signing_token(vault, consul, args.customer_id, rolename)
     add_keystone_user(consul, args.customer_id)
+
 
 if __name__ == '__main__':
     sys.exit(main())
