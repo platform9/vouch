@@ -98,7 +98,10 @@ class CertController(RestController):
             common_name = req.get('common_name', None)
             ip_sans = req.get('ip_sans', [])
             alt_names = req.get('alt_names', [])
-            ttl = req.get('ttl', '730h')
+            # Set the TTL to be a year. We may want to bring this to a lower
+            # value when we have a robust host side certificate handling in
+            # place.
+            ttl = req.get('ttl', '8760h')
             try:
                 resp = self._vault.sign_csr(signing_role, csr,
                                             common_name, ip_sans, alt_names, ttl)
