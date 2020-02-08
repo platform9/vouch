@@ -145,10 +145,10 @@ def create_host_signing_role(vault, consul, customer_id):
     return rolename
 
 
-def create_host_signing_token(vault, consul, customer_id, rolename):
+def create_host_signing_token(vault, consul, customer_id, rolename, token_rolename='vouch-hosts'):
     policy_name = 'hosts-%s' % customer_id
     vault.create_signing_token_policy(rolename, policy_name)
-    token_info = vault.create_token(policy_name)
+    token_info = vault.create_token(policy_name, token_role=token_rolename)
     consul.kv_put('customers/%s/vouch/vault/url' % customer_id, vault.addr)
     consul.kv_put('customers/%s/vouch/vault/host_signing_token' % customer_id,
                   token_info.json()['auth']['client_token'])
