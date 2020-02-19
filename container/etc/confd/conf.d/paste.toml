@@ -5,8 +5,6 @@ owner = 'root'
 mode = '0644'
 keys = [
     '/fqdn',
-    '/vouch/keystone_user/email',
-    '/vouch/keystone_user/password',
-    '/vouch/keystone_user/project'
+    '/vouch',
 ]
 reload_cmd = 'supervisorctl -c /etc/supervisord-keystone.conf restart vouch'
