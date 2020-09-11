@@ -5,7 +5,7 @@ from python:2.7-alpine
 RUN apk add libffi-dev mariadb-connector-c-dev build-base
 
 # install confd
-RUN wget -o /usr/bin/confd \
+RUN wget -O /usr/bin/confd \
     https://github.com/kelseyhightower/confd/releases/download/v0.15.0/confd-0.15.0-linux-amd64 \
     && chmod 755 /usr/bin/confd
 
