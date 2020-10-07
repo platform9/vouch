@@ -84,7 +84,7 @@ class CertController(RestController):
         ip_sans, and a ttl (e.g. 780h)
         """
         req = pecan.request.json
-        if not req.has_key('csr'):
+        if 'csr' not in req:
             pecan.response.status = 400
             pecan.response.json = {
                 'error': 'A POST to /v1/sign/cert must include a csr.'

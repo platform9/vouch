@@ -1,4 +1,6 @@
-from python:2.7
+from python:3.6-slim-buster
+
+RUN apt-get update && apt-get -y install curl
 
 # install confd
 RUN curl -#fL https://github.com/kelseyhightower/confd/releases/download/v0.15.0/confd-0.15.0-linux-amd64 >/usr/bin/confd \

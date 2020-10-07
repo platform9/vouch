@@ -32,13 +32,13 @@ dist: $(VOUCH_DIST) $(FIRKIN_DIST) $(VAULT_DIST)
 $(VOUCH_DIST): $(VOUCH_CODE)
 	cd $(SRCROOT) && \
 	rm -f dist/vouch* && \
-	python setup.py sdist && \
+	python3 setup.py sdist && \
 	cp dist/vouch* $@
 
 $(FIRKIN_DIST): $(FIRKIN_CODE)
 	cd $(FIRKINROOT) && \
 	rm -f dist/firkin* && \
-	python setup.py sdist && \
+	python3 setup.py sdist && \
 	cp dist/firkin* $@
 
 # Vault version pinned to 4f6d7e3f4d65b418ea76df99be4e504f59b80bee,
@@ -47,7 +47,7 @@ $(VAULT_DIST): $(VAULT_CODE)
 	cd $(VAULTROOT) && \
 	rm -f dist/vault* && \
 	git checkout 4f6d7e3f4d65b418ea76df99be4e504f59b80bee && \
-	python setup.py sdist && \
+	python3 setup.py sdist && \
 	cp dist/vault* $@
 
 stage: dist
@@ -57,7 +57,7 @@ $(BUILD_DIR):
 	mkdir -p $@
 
 $(VENV):
-	(test -d $(VENV) || virtualenv $(VENV)) && \
+	(test -d $(VENV) || virtualenv -p python3 $(VENV)) && \
 	$(VENV)/bin/python $(VENV)/bin/pip install pip==19.0.3 setuptools==42.0.2
 
 $(BUILD_DIR)/container-tag: $(BUILD_DIR)
