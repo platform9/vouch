@@ -9,6 +9,9 @@
       httpPath: /vouch
       port: 8448
       rewritePath: "/"
+  egresses:
+    - endpoint: keystone-internal
+      localPort: 8080
   logfiles:
     - path: /var/log/vouch.log
     - path: /var/log/confd.log
