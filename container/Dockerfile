@@ -1,14 +1,18 @@
-from python:2.7
+FROM python:3.6-slim-buster
+
+ARG PIP_INDEX_URL=https://artifactory.platform9.horse/artifactory/api/pypi/pypi/simple
+ENV PIP_INDEX_URL ${PIP_INDEX_URL}
+
+RUN apt-get update && apt-get -y install curl
 
 # install confd
 RUN curl -#fL https://github.com/kelseyhightower/confd/releases/download/v0.15.0/confd-0.15.0-linux-amd64 >/usr/bin/confd \
  && chmod 755 /usr/bin/confd
 
 # install vouch and supervisor
-COPY vouch-sdist.tgz firkinize-sdist.tgz vault-sdist.tgz /tmp/
-RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz /tmp/firkinize-sdist.tgz \
- /tmp/vault-sdist.tgz supervisor \
- && rm -f /tmp/vouch-sdist.tgz /tmp/firkinize-sdist.tgz /tmp/vault-sdist.tgz \
+COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
+RUN pip install --no-cache-dir firkinize supervisor /tmp/vouch-sdist.tgz \ /tmp/vault-sdist.tgz \
+ && rm -f /tmp/vouch-sdist.tgz /tmp/vault-sdist.tgz \
  && ln -s /usr/local/bin/init-region /root/init-region
 
 COPY etc/ /etc
