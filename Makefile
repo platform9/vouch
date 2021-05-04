@@ -11,11 +11,6 @@ $(shell mkdir -p $(STAGE))
 VOUCH_CODE = $(shell find $(SRCROOT)/vouch -name '*.py') $(SRCROOT)/setup.py
 VOUCH_DIST = $(STAGE)/vouch-sdist.tgz
 
-FIRKINROOT = $(abspath $(SRCROOT)/../firkinize)
-FIRKIN_CODE = $(shell find $(FIRKINROOT)/firkinize -name '*.py') \
-              $(FIRKINROOT)/setup.py
-FIRKIN_DIST = $(STAGE)/firkinize-sdist.tgz
-
 VAULTROOT = $(abspath $(SRCROOT)/../vault)
 VAULT_CODE = $(shell find $(VAULTROOT)/vault -name '*.py') $(VAULTROOT)/setup.py
 VAULT_DIST = $(STAGE)/vault-sdist.tgz
@@ -27,19 +22,13 @@ BUILD_ID := $(BUILD_NUMBER)
 IMAGE_TAG ?= "$(or $(PF9_VERSION), $(PF9_VERSION), "latest")-$(BUILD_ID)"
 BRANCH_NAME ?= $(or $(TEAMCITY_BUILD_BRANCH), $(TEAMCITY_BUILD_BRANCH), $(shell git symbolic-ref --short HEAD))
 
-dist: $(VOUCH_DIST) $(FIRKIN_DIST) $(VAULT_DIST)
+dist: $(VOUCH_DIST) $(VAULT_DIST)
 
 $(VOUCH_DIST): $(VOUCH_CODE)
 	cd $(SRCROOT) && \
 	rm -f dist/vouch* && \
 	python setup.py sdist && \
 	cp dist/vouch* $@
-
-$(FIRKIN_DIST): $(FIRKIN_CODE)
-	cd $(FIRKINROOT) && \
-	rm -f dist/firkin* && \
-	python setup.py sdist && \
-	cp dist/firkin* $@
 
 # Vault version pinned here in lieu of using pip.
 $(VAULT_DIST): $(VAULT_CODE)
@@ -63,7 +52,7 @@ $(BUILD_DIR)/container-tag: $(BUILD_DIR)
 	echo -ne "$(IMAGE_TAG)" >$@
 
 unit-test: $(VENV)
-	$(VENV)/bin/python $(VENV)/bin/pip install -e$(SRCROOT) -e$(FIRKINROOT) \
+	$(VENV)/bin/python $(VENV)/bin/pip install -e$(SRCROOT) \
 	-e$(VAULTROOT) nose && \
 	$(VENV)/bin/nosetests -vd .
 
@@ -89,5 +78,4 @@ clean:
 	rm -rf $(VENV)
 	rm -rf $(STAGE)
 	rm -rf $(SRCROOT)/dist
-	rm -rf $(FIRKINROOT)/dist
 	rm -rf $(VAULTROOT)/dist
