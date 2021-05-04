@@ -56,15 +56,17 @@ unit-test: $(VENV)
 	-e$(VAULTROOT) nose && \
 	$(VENV)/bin/nosetests -vd .
 
-$(VENV)/bin/y2j: $(VENV)
-	$(VENV)/bin/python $(VENV)/bin/pip install -e$(FIRKINROOT)
+#$(VENV)/bin/y2j: $(VENV)
+#	$(VENV)/bin/python $(VENV)/bin/pip install -e$(FIRKINROOT)
 
-image: stage $(VENV)/bin/y2j
+image: #stage $(VENV)/bin/y2j
 	docker build -t $(DOCKER_REPOSITORY):$(IMAGE_TAG) \
 		--build-arg BUILD_ID=$(BUILD_ID) \
 		--build-arg VERSION=$(PF9_VERSION) \
 		--build-arg BRANCH=$(BRANCH_NAME) \
-		--build-arg APP_METADATA="$$($(VENV)/bin/y2j $(STAGE)/app_metadata.yaml)" \
+		--build-arg APP_METADATA=`yq -c . $(STAGE)/app_metadata.yaml` \
+                  $(STAGE)
+#"$$($(VENV)/bin/y2j $(STAGE)/app_metadata.yaml)" \
 		$(STAGE)
 
 # This assumes that credentials for the aws tool are configured, either in
