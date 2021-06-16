@@ -84,8 +84,8 @@ def random_string(length=16):
     generate a string made of random numbers and letters that always starts
     with a letter.
     """
-    secret_chars = string.letters + string.digits
-    return ''.join([random.SystemRandom().choice(string.letters)] +
+    secret_chars = string.ascii_letters + string.digits
+    return ''.join([random.SystemRandom().choice(string.ascii_letters)] +
                    [random.SystemRandom().choice(secret_chars)
                     for _ in range(length - 1)])
 
