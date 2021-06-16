@@ -84,13 +84,13 @@ class CertController(RestController):
         ip_sans, and a ttl (e.g. 780h)
         """
         req = pecan.request.json
-        if not req.has_key('csr'):
+        if not 'csr' in req:
             pecan.response.status = 400
             pecan.response.json = {
                 'error': 'A POST to /v1/sign/cert must include a csr.'
             }
         else:
-            csr = x509.load_pem_x509_csr(str(req['csr']), default_backend())
+            csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
             LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
             ca_name = CONF['ca_name']
             signing_role = CONF['signing_role']
