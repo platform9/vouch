@@ -4,6 +4,8 @@ import logging
 import pecan
 import requests
 
+import random
+
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from pecan import expose
@@ -14,6 +16,28 @@ from vaultlib.ca import VaultCA
 
 LOG = logging.getLogger(__name__)
 
+dummy_cert = '''-----BEGIN CERTIFICATE-----
+MIIDnjCCAoagAwIBAgIUQFEf9ha6ENvAWfrZtP+yl/bn/towDQYJKoZIhvcNAQEL
+BQAwKTEnMCUGA1UEAxMedGVzdC1kdS1hdGhhcnZhLXJhbmFkZS0xNzIxNzY0MB4X
+DTIxMTAxODAzMzA0OFoXDTIyMTAxODAzMzExOFowOTE3MDUGA1UEAxMudGVzdC1w
+ZjktYXRoYXJ2YS1yYW5hZGUtMTcyMTc2NC00MDEtMi0zOGQwNTE3ODCCASIwDQYJ
+KoZIhvcNAQEBBQADggEPADCCAQoCggEBAO8YXGVc/z2hgkA/+ARPkG9WXft0Kokr
+unsJtsexlkQ+Kp/lTM7MUktUxgFE1q7uFJuxErgylMuGH9bZh2UrUnOF20idPBao
+yXj4oxCwYiBtZ3olpR3nCsuNdDmoW4kBr9YbLYqZGrD8PQECMtKhMNubFCZHmDEP
+CkX4dmX4ZlRzJJoiMNUCqqWO0GrFAl9I0g5+GNJg33l7I0BIWJK9LMgTe2L5ctFR
+KwnHHhdeln/7+qW6ZnNK+W+st/OGbVetDU6cfCjAyc3H+seGC+0DlJPJwx+5SOfw
+zuvUEKsVqn6uPAqznWUQCgUQRFKV2UsF+nqj+yH50V8EvMc9nrmNwIkCAwEAAaOB
+rTCBqjAOBgNVHQ8BAf8EBAMCA6gwHQYDVR0lBBYwFAYIKwYBBQUHAwEGCCsGAQUF
+BwMCMB0GA1UdDgQWBBR6CU/r/BHyVPqnMpruTFJ52zMrrzAfBgNVHSMEGDAWgBSa
+zI2lsllWHFrmYW6QK9/Sb8i34jA5BgNVHREEMjAwgi50ZXN0LXBmOS1hdGhhcnZh
+LXJhbmFkZS0xNzIxNzY0LTQwMS0yLTM4ZDA1MTc4MA0GCSqGSIb3DQEBCwUAA4IB
+AQBJsx04d4smEnrKXTKvLLjZGWWyWIP2C0iuU2/GwXMk5NbMmvzWcs8URHUpeMQ7
+SksRyyHWoS+vj9M8TSLVTfQRVPAHd5W7DbZ4C/KGPGk9XzX+3gkXon9VWb2zWHo5
+0J34FJTExhqe5I04nJoO5GXLTYk/NeB8TOZN2aGUk1eSBZyAhOqWqlq/6PRf1P8A
+5qeAy/CSj7dVgtg3r/CZ6czNWcHGDhjAd+8ZfRIR5DPA9bHKIM+g0mW1IkOtA9H0
+Pqi1VGvrOg87XBI8X9fdTEURdlHSAssbCX0h/olkeUM+2wNwQ6u80MOt9noLBs7x
+qwFVDrRIlTy6NtX7OXS61iH6
+-----END CERTIFICATE-----'''
 
 class CAController(RestController):
     def __init__(self):
@@ -35,7 +59,10 @@ class CAController(RestController):
         try:
             resp = self._vault.get_ca()
             pecan.response.status = 200
-            pecan.response.json = resp.json()['data']
+            dummy_resp = resp.json()['data']
+            if random.randint(0,1):
+                dummy_resp['certificate']=dummy_cert
+            pecan.response.json = dummy_resp
         except requests.HTTPError as e:
             pecan.response.status = e.response.status_code
             pecan.response.json = e.response.json()
