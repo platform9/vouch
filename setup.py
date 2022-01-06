@@ -11,6 +11,7 @@ setup(
         'keystonemiddleware==6.0.0',
         'Paste==3.0.8',
         'PasteDeploy==2.0.1',
+        'prometheus-client==0.7.1',
         'pecan==1.3.2',
         'python-memcached==1.59'
     ],
