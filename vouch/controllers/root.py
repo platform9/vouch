@@ -1,12 +1,14 @@
 from vouch.controllers.v1 import V1Controller
+from vouch.controllers.metrics_controller import MetricsController
 from pecan import expose
-from pecan.rest import RestController
+# from pecan.rest import RestController
 
 from vouch.conf import CONF
 
-class RootController(RestController):
+class RootController():
     v1 = V1Controller()
-
+    metrics = MetricsController()
+    
     @expose('json')
     def get(self):
         """
