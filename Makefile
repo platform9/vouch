@@ -30,11 +30,9 @@ $(VOUCH_DIST): $(VOUCH_CODE)
 	python setup.py sdist && \
 	cp dist/vouch* $@
 
-# Vault version pinned here in lieu of using pip.
 $(VAULT_DIST): $(VAULT_CODE)
 	cd $(VAULTROOT) && \
 	rm -f dist/vault* && \
-	git checkout 7fc197d3f9240cdd0920ff93e6d3cb36199bae03 && \
 	python setup.py sdist && \
 	cp dist/vault* $@
 
