@@ -1,4 +1,4 @@
-from artifactory.platform9.horse/docker-local/pf9-py36-baseimg:5.4.0-stable
+from artifactory.platform9.horse/docker-local/pf9-py39-baseimg:stable
 
 # install vouch
 COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
