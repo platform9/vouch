@@ -1,6 +1,6 @@
 
 .SUFFIXES:
-.PHONY: clean push image stage dist unit-test
+.PHONY: clean push image stage dist unit-test stage-with-py-container
 
 SRCROOT = $(abspath $(dir $(CURDIR)/$(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))))
 BUILD_DIR := $(SRCROOT)/build
@@ -12,11 +12,11 @@ VOUCH_CODE = $(shell find $(SRCROOT)/vouch -name '*.py') $(SRCROOT)/setup.py
 VOUCH_DIST = $(STAGE)/vouch-sdist.tgz
 
 VAULTROOT = $(abspath $(SRCROOT)/../vault)
-VAULT_CODE = $(shell find $(VAULTROOT)/vault -name '*.py') $(VAULTROOT)/setup.py
+VAULT_CODE = $(shell find $(VAULTROOT) -name '*.py') $(VAULTROOT)/setup.py
 VAULT_DIST = $(STAGE)/vault-sdist.tgz
 
-BUILD_NUMBER ?= 0
-PF9_VERSION ?= 0.0.0
+export BUILD_NUMBER ?= 0
+export PF9_VERSION ?= 0.0.0
 DOCKER_REPOSITORY ?= 514845858982.dkr.ecr.us-west-1.amazonaws.com/vouch
 BUILD_ID := $(BUILD_NUMBER)
 IMAGE_TAG ?= "$(or $(PF9_VERSION), $(PF9_VERSION), "latest")-$(BUILD_ID)"
@@ -25,18 +25,22 @@ BRANCH_NAME ?= $(or $(TEAMCITY_BUILD_BRANCH), $(TEAMCITY_BUILD_BRANCH), $(shell 
 dist: $(VOUCH_DIST) $(VAULT_DIST)
 
 $(VOUCH_DIST): $(VOUCH_CODE)
+	id && echo $(PATH) && \
 	cd $(SRCROOT) && \
 	rm -f dist/vouch* && \
-	python setup.py sdist && \
+	python3 setup.py sdist && \
 	cp dist/vouch* $@
 
 $(VAULT_DIST): $(VAULT_CODE)
 	cd $(VAULTROOT) && \
 	rm -f dist/vault* && \
-	python setup.py sdist && \
+	python3 setup.py sdist && \
 	cp dist/vault* $@
 
-stage: dist
+stage-with-py-container: dist
+
+stage:
+	$(SRCROOT)/run-staging-in-container.sh && \
 	cp -r $(SRCROOT)/container/* $(STAGE)/
 
 $(BUILD_DIR):
