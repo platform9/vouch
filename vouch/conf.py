@@ -25,3 +25,14 @@ def set_config(config_file):
         if not os.path.isfile(CONF[key]):
             raise RuntimeError('Could not find config file %s at %s'
                                % (key, CONF[key]))
+    try:
+        customer_id = os.environ['CUSTOMER_ID']
+        region_id = os.environ['REGION_ID']
+        consul_url = os.environ['CONFIG_URL']
+        consul_token = os.environ['CONSUL_HTTP_TOKEN']
+        CONF['customer_id']=customer_id
+        CONF['region_id']=region_id
+        CONF['consul_url']=consul_url
+        CONF['consul_token']=consul_token
+    except KeyError as e:
+        raise RuntimeError('Failed to set consul config, missing environment:', e)
