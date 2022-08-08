@@ -11,7 +11,6 @@ from pecan.rest import RestController
 from vouch.conf import CONF
 from vaultlib.ca import VaultCA
 
-
 LOG = logging.getLogger(__name__)
 
 class CAController(RestController):
