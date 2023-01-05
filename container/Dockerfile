@@ -1,4 +1,8 @@
-from artifactory.platform9.horse/docker-local/pf9-py39-baseimg:stable
+from artifactory.platform9.horse/docker-local/pf9-py39-baseimg-alpine:stable
+
+RUN apk update && apk add bash \
+    && apk add curl \
+    && rm -vrf /var/cache/apk/*
 
 # install vouch
 COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
