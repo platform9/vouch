@@ -7,7 +7,7 @@ setup(
     author='',
     author_email='',
     install_requires=[
-        'cryptography==2.6.1',
+        'cryptography==39.0.1',
         'keystonemiddleware==6.0.0',
         'Paste==3.0.8',
         'PasteDeploy==2.0.1',
