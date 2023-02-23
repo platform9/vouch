@@ -12,6 +12,7 @@ RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
  && ln -s /usr/local/bin/init-region /root/init-region
 
 COPY etc/ /etc
+COPY scripts/ /
 
 ARG APP_METADATA
 LABEL com.platform9.app_metadata=${APP_METADATA}
