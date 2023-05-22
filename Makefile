@@ -17,7 +17,7 @@ VAULT_DIST = $(STAGE)/vault-sdist.tgz
 
 export BUILD_NUMBER ?= 0
 export PF9_VERSION ?= 0.0.0
-DOCKER_REPOSITORY ?= 514845858982.dkr.ecr.us-west-1.amazonaws.com/vouch
+DOCKER_REPOSITORY ?= quay.io/platform9/vouch
 BUILD_ID := $(BUILD_NUMBER)
 IMAGE_TAG ?= "$(or $(PF9_VERSION), $(PF9_VERSION), "latest")-$(BUILD_ID)"
 BRANCH_NAME ?= $(or $(TEAMCITY_BUILD_BRANCH), $(TEAMCITY_BUILD_BRANCH), $(shell git symbolic-ref --short HEAD))
@@ -69,9 +69,7 @@ image: stage
 # This assumes that credentials for the aws tool are configured, either in
 # ~/.aws/config or in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 push: image $(BUILD_DIR)/container-tag
-	docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG) || \
-	(aws ecr get-login --no-include-email --region=us-west-1 |sh && \
-		docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG))
+	  docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG))
 
 clean:
 	rm -rf $(VENV)
