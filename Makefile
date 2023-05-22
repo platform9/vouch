@@ -69,7 +69,7 @@ image: stage
 # This assumes that credentials for the aws tool are configured, either in
 # ~/.aws/config or in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 push: image $(BUILD_DIR)/container-tag
-	  docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG))
+	  docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG)
 
 clean:
 	rm -rf $(VENV)
