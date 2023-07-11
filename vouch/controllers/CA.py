@@ -42,11 +42,12 @@ class ListCAController(RestController):
         LOG.info('Fetching list of current ca certificates')
         try:
             certs =  self._consul.kv_get_prefix(self._prefix+ '/certs')
-            active_ca = []
+            active_ca = ""
             for k in certs:
                 pattern = '^'+ self._prefix +'/certs/v\d+/ca/cert$'
                 if re.search(pattern,k):
-                    active_ca.append(certs[k])
+                    active_ca += certs[k]
+                    active_ca += "\n"
             pecan.response.status = 200
             pecan.response.json = active_ca
         except Exception as e:
