@@ -90,7 +90,7 @@ class CertController(RestController):
             }
         else:
             csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
-            LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
+            LOG.info('NEHA Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
             ca_name = CONF['ca_name']
             signing_role = CONF['signing_role']
             csr = req['csr']
@@ -100,7 +100,7 @@ class CertController(RestController):
             # Set the TTL to be a year. We may want to bring this to a lower
             # value when we have a robust host side certificate handling in
             # place.
-            ttl = req.get('ttl', '8760h')
+            ttl = req.get('ttl', '35040h')
             try:
                 resp = self._vault.sign_csr(signing_role, csr,
                                             common_name, ip_sans, alt_names, ttl)
