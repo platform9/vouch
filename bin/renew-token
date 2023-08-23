@@ -1,0 +1,75 @@
+#!/bin/env python
+
+import logging
+import os
+import random
+import requests
+import string
+import sys
+
+from argparse import ArgumentParser
+from firkinize.configstore.consul import Consul
+from vaultlib.ca import VaultCA
+
+logging.basicConfig(level=logging.DEBUG)
+
+LOG = logging.getLogger(__name__)
+
+# Utility for creating new vouch token
+def parse_args():
+    parser = ArgumentParser(description='Initialize vouch signing service')
+    parser.add_argument('--config-url', default='http://localhost:8500',
+                        help='Address of the config node, default http://localhost:8500')
+    parser.add_argument('--customer-id',
+                        help='The keystone customer id', required=True)
+    parser.add_argument('--region-id',
+                        help='The region id for which to bootstrap the keystone endpoint',
+                        required=True)
+    parser.add_argument('--config-token',
+                        help='config access token, also looks for '
+                             'env[\'CONSUL_HTTP_TOKEN\']')
+    return parser.parse_args()
+
+
+def get_vault_admin_client(consul, customer_uuid):
+    ca_name = consul.kv_get('customers/%s/vouch/ca_name' % customer_uuid)
+    ca_common_name = consul.kv_get('customers/%s/vouch/ca_common_name' % customer_uuid)
+
+    vault_server_key = consul.kv_get('customers/%s/vouch/vault/server_key'
+                                     % customer_uuid)
+    with consul.prefix(vault_server_key):
+        url = consul.kv_get('url')
+        token = consul.kv_get('admin_token')
+
+    return VaultCA(url, token, ca_name, ca_common_name)
+
+
+def create_host_signing_role(vault, consul, customer_id):
+    rolename = 'hosts-%s' % customer_id
+    vault.create_signing_role(rolename)
+    consul.kv_put('customers/%s/vouch/ca_signing_role' % customer_id,
+                  rolename)
+    return rolename
+
+
+def create_host_signing_token(vault, consul, customer_id, rolename, token_rolename='vouch-hosts'):
+    policy_name = 'hosts-%s' % customer_id
+    vault.create_vouch_token_policy(rolename, policy_name)
+    token_info = vault.create_token(policy_name, token_role=token_rolename)
+    consul.kv_put('customers/%s/vouch/vault/url' % customer_id, vault.addr)
+    consul.kv_put('customers/%s/vouch/vault/host_signing_token' % customer_id,
+                  token_info.json()['auth']['client_token'])
+
+
+def main():
+    args = parse_args()
+    config_url = args.config_url or os.environ.get('CONSUL_HTTP_ADDR', None)
+    token = args.config_token or os.environ.get('CONSUL_HTTP_TOKEN', None)
+    consul = Consul(config_url, token=token)
+    vault = get_vault_admin_client(consul, args.customer_id)
+    rolename = create_host_signing_role(vault, consul, args.customer_id)
+    create_host_signing_token(vault, consul, args.customer_id, rolename)
+
+
+if __name__ == '__main__':
+    sys.exit(main())
