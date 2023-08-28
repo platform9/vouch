@@ -15,7 +15,7 @@ setup(
         'pecan==1.3.2',
         'python-memcached==1.59'
     ],
-    scripts=['bin/vouch', 'bin/init-region'],
+    scripts=['bin/vouch', 'bin/init-region', 'bin/renew-token'],
     test_suite='nose.collector',
     tests_require=['nose', 'mock'],
     zip_safe=False,

@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
  /tmp/vault-sdist.tgz \
  && rm -f /tmp/vouch-sdist.tgz /tmp/vault-sdist.tgz \
  && ln -s /usr/local/bin/init-region /root/init-region
+ && ln -s /usr/local/bin/renew-token /root/renew-token
 
 COPY etc/ /etc
 COPY scripts/ /
