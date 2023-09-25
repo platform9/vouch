@@ -15,7 +15,7 @@ setup(
         'pecan==1.5.1', # https://github.com/pecan/pecan/tags
         'python-memcached==1.59' #https://github.com/linsomniac/python-memcached/releases
     ],
-    scripts=['bin/vouch', 'bin/init-region', 'bin/renew-token'],
+    scripts=['bin/vouch', 'bin/common.py', 'bin/init-region', 'bin/renew-token'],
     test_suite='nose.collector',
     tests_require=['nose', 'mock'],
     zip_safe=False,

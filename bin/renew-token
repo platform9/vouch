@@ -1,10 +1,10 @@
 #!/bin/env python
 
-from common import parse, new_token
+from common import sys, parse, new_token
 
 def main():
     args, consul = parse()
-    new_token()
+    new_token(consul, args.customer_id)
 
 if __name__ == '__main__':
     sys.exit(main())
