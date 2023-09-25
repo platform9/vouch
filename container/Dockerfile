@@ -9,6 +9,7 @@ COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
 RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
  /tmp/vault-sdist.tgz \
  && rm -f /tmp/vouch-sdist.tgz /tmp/vault-sdist.tgz \
+ && ln -s /usr/local/bin/common.py /root/common.py \
  && ln -s /usr/local/bin/init-region /root/init-region \
  && ln -s /usr/local/bin/renew-token /root/renew-token
 
