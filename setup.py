@@ -7,13 +7,13 @@ setup(
     author='',
     author_email='',
     install_requires=[
-        'cryptography==2.6.1',
-        'keystonemiddleware==6.0.0',
-        'Paste==3.0.8',
-        'PasteDeploy==2.0.1',
-        'prometheus-client==0.7.1',
-        'pecan==1.3.2',
-        'python-memcached==1.59'
+        'cryptography==41.0.4', # https://pypi.org/project/cryptography/
+        'keystonemiddleware==10.4.1', # https://pypi.org/project/keystonemiddleware/
+        'Paste==3.7.1',
+        'PasteDeploy==3.0.1',
+        'prometheus-client==0.17.1', # https://pypi.org/project/prometheus-client/
+        'pecan==1.5.1', # https://github.com/pecan/pecan/tags
+        'python-memcached==1.59' #https://github.com/linsomniac/python-memcached/releases
     ],
     scripts=['bin/vouch', 'bin/common.py', 'bin/init-region', 'bin/renew-token'],
     test_suite='nose.collector',
