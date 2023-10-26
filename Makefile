@@ -48,7 +48,7 @@ $(BUILD_DIR):
 
 $(VENV):
 	(test -d $(VENV) || virtualenv $(VENV)) && \
-	$(VENV)/bin/python $(VENV)/bin/pip install pip==19.0.3 setuptools==42.0.2
+	$(VENV)/bin/python $(VENV)/bin/pip install pip==23.3.1 setuptools==68.2.2
 
 $(BUILD_DIR)/container-tag: $(BUILD_DIR)
 	echo -ne "$(IMAGE_TAG)" >$@
