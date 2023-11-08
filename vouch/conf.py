@@ -10,7 +10,7 @@ def set_config(config_file):
     if CONF:
         raise RuntimeError('You can only call set_config once!')
     with open(config_file) as f:
-        CONF = yaml.load(f)
+        CONF = yaml.safe_load(f)
 
     # paste.ini and config.py can be absolute paths in the config.
     # If not, check relative to original config
