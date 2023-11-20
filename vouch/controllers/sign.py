@@ -107,6 +107,11 @@ class CertController(RestController):
                 pecan.response.json = resp.json()['data']
                 pecan.response.status = 200
             except requests.HTTPError as e:
+                LOG.error(
+                    'CSR Signing failed. Error code \'%s\', with response \'%s\'',
+                    e.response.status_code,
+                    e.response.json()
+                )
                 pecan.response.status = e.response.status_code
                 pecan.response.json = e.response.json()
 
