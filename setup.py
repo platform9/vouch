@@ -7,7 +7,7 @@ setup(
     author='',
     author_email='',
     install_requires=[
-        'cryptography==41.0.4', # https://pypi.org/project/cryptography/
+        'cryptography==41.0.6', # https://pypi.org/project/cryptography/
         'keystonemiddleware==10.4.1', # https://pypi.org/project/keystonemiddleware/
         'Paste==3.7.1',
         'PasteDeploy==3.0.1',
