@@ -9,6 +9,7 @@ import sys
 
 from argparse import ArgumentParser
 from firkinize.configstore.consul import Consul
+from requests import HTTPError
 from vaultlib.ca import VaultCA
 
 logging.basicConfig(level=logging.DEBUG)
@@ -137,21 +138,36 @@ def get_vault_admin_client(consul, customer_uuid):
     return VaultCA(url, token, ca_name, ca_common_name)
 
 
-def create_host_signing_role(vault, consul, customer_id):
+def create_host_signing_role(vault, consul, customer_id) -> str:
     rolename = 'hosts-%s' % customer_id
-    vault.create_signing_role(rolename)
-    consul.kv_put('customers/%s/vouch/ca_signing_role' % customer_id,
-                  rolename)
-    return rolename
+    customer_key: str = f'customers/{customer_id}/vouch/ca_signing_role'
+    try:
+        val = consul.kv_get(customer_key)
+        LOG.debug('kv_get for %s returned: %s', customer_key, val)
+        return rolename
+    except HTTPError as err:
+        LOG.error('cannot do kv_get on %s', customer_key, exc_info=err)
+        if err.response.status_code == 404:
+            vault.create_signing_role(rolename)
+            consul.kv_put(customer_key, rolename)
+            return rolename
 
 
 def create_host_signing_token(vault, consul, customer_id, rolename, token_rolename='vouch-hosts'):
     policy_name = 'hosts-%s' % customer_id
-    vault.create_vouch_token_policy(rolename, policy_name)
-    token_info = vault.create_token(policy_name, token_role=token_rolename)
-    consul.kv_put('customers/%s/vouch/vault/url' % customer_id, vault.addr)
-    consul.kv_put('customers/%s/vouch/vault/host_signing_token' % customer_id,
-                  token_info.json()['auth']['client_token'])
+    customer_vault_url: str = f'customers/{customer_id}/vouch/vault/url'
+    customer_vault_hsk: str = f'customers/{customer_id}/vouch/vault/host_signing_token'
+    try:
+        url = consul.kv_get(customer_vault_url)
+        LOG.debug('consul kv_get on %s returned: %s', customer_vault_url, url)
+        host_signing_token = consul.kv_get(customer_vault_hsk)
+        LOG.debug('consul kv_get on %s returned: %s', customer_vault_hsk, host_signing_token)
+    except HTTPError as err:
+        if err.response.status_code == 404:
+            vault.create_vouch_token_policy(rolename, policy_name)
+            token_info = vault.create_token(policy_name, token_role=token_rolename)
+            consul.kv_put(customer_vault_url, vault.addr)
+            consul.kv_put(customer_vault_hsk, token_info.json()['auth']['client_token'])
 
 
 def parse():
