@@ -126,11 +126,11 @@ def add_keystone_user(consul, customer_uuid):
 
 
 def get_vault_admin_client(consul, customer_uuid):
-    ca_name = consul.kv_get('customers/%s/vouch/ca_name' % customer_uuid)
-    ca_common_name = consul.kv_get('customers/%s/vouch/ca_common_name' % customer_uuid)
+    region_uuid = os.environ['REGION_ID'] # to minimize signature changes
+    ca_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_name')
+    ca_common_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_common_name')
 
-    vault_server_key = consul.kv_get('customers/%s/vouch/vault/server_key'
-                                     % customer_uuid)
+    vault_server_key = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/vault/server_key')
     with consul.prefix(vault_server_key):
         url = consul.kv_get('url')
         token = consul.kv_get('admin_token')
@@ -139,15 +139,16 @@ def get_vault_admin_client(consul, customer_uuid):
 
 
 def create_host_signing_role(vault, consul, customer_id) -> str:
+    region_uuid = os.environ['REGION_ID']
     rolename = 'hosts-%s' % customer_id
-    customer_key: str = f'customers/{customer_id}/vouch/ca_signing_role'
+    customer_key: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/ca_signing_role'
     try:
         val = consul.kv_get(customer_key)
         LOG.debug('kv_get for %s returned: %s', customer_key, val)
         return rolename
     except HTTPError as err:
-        LOG.error('cannot do kv_get on %s', customer_key, exc_info=err)
         if err.response.status_code != 404:
+            LOG.error('cannot do kv_get on %s', customer_key, exc_info=err)
             raise err
         vault.create_signing_role(rolename)
         consul.kv_put(customer_key, rolename)
@@ -155,17 +156,18 @@ def create_host_signing_role(vault, consul, customer_id) -> str:
 
 
 def create_host_signing_token(vault, consul, customer_id, rolename, token_rolename='vouch-hosts'):
+    region_uuid = os.environ['REGION_ID']
     policy_name = 'hosts-%s' % customer_id
-    customer_vault_url: str = f'customers/{customer_id}/vouch/vault/url'
-    customer_vault_hsk: str = f'customers/{customer_id}/vouch/vault/host_signing_token'
+    customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
+    customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
     try:
         url = consul.kv_get(customer_vault_url)
         LOG.debug('consul kv_get on %s returned: %s', customer_vault_url, url)
         host_signing_token = consul.kv_get(customer_vault_hsk)
         LOG.debug('consul kv_get on %s returned: %s', customer_vault_hsk, host_signing_token)
     except HTTPError as err:
-        LOG.error('cannot perform consul operation', exc_info=err)
         if err.response.status_code != 404:
+            LOG.error('cannot perform consul operation', exc_info=err)
             raise err
         vault.create_vouch_token_policy(rolename, policy_name)
         token_info = vault.create_token(policy_name, token_role=token_rolename)
