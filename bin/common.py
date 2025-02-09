@@ -125,9 +125,83 @@ def add_keystone_user(consul, customer_uuid):
         LOG.info('Added vouch user')
 
 
+def fabricate_missing_data(consul, customer_uuid, region_uuid):
+
+    cert_version = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/certs/current_version')
+
+    # Obtain the shared_ca_name, which is quite possibly clobbered. We only need the very first component
+    # of this, the secrets engine, which might look like "pki" or "pki_prod" or "pki_pmkft", etc.
+
+    # looks like "pki/versioned/9d524532-61f0-41ac-a85a-64a3f5ac0656/v0"
+
+    shared_ca_name = consul.kv_get(f'customers/{customer_uuid}/vouch/ca_name')
+    secrets_engine = shared_ca_name.split("/")[0]
+
+    ca_name = f'{secrets_engine}/versioned/{region_uuid}/{cert_version}'
+
+    # Our ca_common_name is always the DU shortname
+
+    du_fqdn = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/fqdn')
+    ca_common_name = du_fqdn.split(".")[0]
+
+    # Our ca_signing_role is the same across all regions
+
+    ca_signing_role = f'hosts-{customer_uuid}'
+
+    # The server key is strange, since this seems to be an unneeded abstraction. We have
+    # always called it 'dev' for some reason, so this is hardcoded in deccaxon and vouch now.
+
+    server_key = f'customers/{customer_uuid}/vault_servers/dev'
+
+    # Global across all regions
+
+    vault_server = consul.kv_get(f'{server_key}/url')
+
+    # The admin token has policies: [default kplane]
+    # The host_signing_token has policies: [default hosts-{customer_uuid}]
+    # Both should work for all regions.
+
+    admin_token = consul.kv_get(f'customers/{customer_uuid}/vault_servers/dev/admin_token')
+    host_signing_token = consul.kv_get(f'customers/{customer_uuid}/vouch/vault/host_signing_token')
+
+    # Construct a tree to place under the region services "vouch" section
+
+    vault_tree = {
+        'url': vault_server,
+        'server_key': server_key,
+    }
+
+    vault_servers_tree = {
+        'dev': {
+            'admin_token': admin_token,
+            'url': vault_server,
+        }
+    }
+
+    vouch_tree = {
+        'ca_common_name': ca_common_name,
+        'ca_name': ca_name,
+        'ca_signing_role': ca_signing_role,
+        'host_signing_token': host_signing_token,
+        'vault': vault_tree,
+        'vault_servers': vault_servers_tree,
+    }
+
+    full_tree = { 'customers': { customer_uuid: { 'regions': { region_uuid: { 'services': { 'vouch': vouch_tree }}}}}}
+    consul.kv_put_dict(full_tree)
+
+    return ca_name
+
 def get_vault_admin_client(consul, customer_uuid):
     region_uuid = os.environ['REGION_ID'] # to minimize signature changes
-    ca_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_name')
+
+    try:
+        ca_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_name')
+    except requests.HTTPError as e:
+        if e.response.status_code != 404:
+            raise
+        ca_name = fabricate_missing_data(consul, customer_uuid, region_uuid)
+
     ca_common_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_common_name')
 
     vault_server_key = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/vault/server_key')
