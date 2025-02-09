@@ -35,9 +35,12 @@ class CAController(RestController):
             resp = self._vault.get_ca()
             pecan.response.status = 200
             pecan.response.json = resp.json()['data']
+            LOG.info('status: 200')
         except requests.HTTPError as e:
             pecan.response.status = e.response.status_code
             pecan.response.json = e.response.json()
+            LOG.info('status: %s', e.response.status_code)
+            LOG.info('response json: %s', e.response.json())
         return pecan.response
 
     @expose('json')
@@ -59,9 +62,12 @@ class CAController(RestController):
             resp_json['new'] = resp_new.json()['data']
             pecan.response.status = 200
             pecan.response.json = resp_json
+            LOG.info('status: 200')
         except requests.HTTPError as e:
             pecan.response.status = e.response.status_code
             pecan.response.json = e.response.json()
+            LOG.info('status: %s', e.response.status_code)
+            LOG.info('response json: %s', e.response.json())
         return pecan.response
 
 
@@ -106,9 +112,12 @@ class CertController(RestController):
                                             common_name, ip_sans, alt_names, ttl)
                 pecan.response.json = resp.json()['data']
                 pecan.response.status = 200
+                LOG.info('status: 200')
             except requests.HTTPError as e:
                 pecan.response.status = e.response.status_code
                 pecan.response.json = e.response.json()
+                LOG.info('status: %s', e.response.status_code)
+                LOG.info('response json: %s', e.response.json())
 
         return pecan.response
 
