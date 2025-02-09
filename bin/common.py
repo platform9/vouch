@@ -150,6 +150,8 @@ def add_keystone_user(consul, customer_uuid):
 
 def fabricate_missing_data(consul, customer_uuid, region_uuid):
 
+    LOG.info(f'fabricating regional vouch config for {region_uuid}')
+
     cert_version = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/certs/current_version')
 
     # Obtain the shared_ca_name, which is quite possibly clobbered. We only need the very first component
@@ -181,18 +183,9 @@ def fabricate_missing_data(consul, customer_uuid, region_uuid):
     vault_server = consul.kv_get(f'{server_key}/url')
 
     # The admin token has policies: [default kplane]
-    # Both should work for all regions.
+    # This is independent of region.
 
     admin_token = consul.kv_get(f'customers/{customer_uuid}/vault_servers/dev/admin_token')
-
-    # The earlier, legacy host_signing_token had policies: [default hosts-{customer_uuid}]
-    # Tried to do this, but the token has region-specific policy:
-    #   host_signing_token = consul.kv_get(f'customers/{customer_uuid}/vouch/vault/host_signing_token')
-    # Instead, generate a new token and policy:
-
-    vault = get_vault_admin_client(consul, customer_uuid)
-    rolename = create_host_signing_role(vault, consul, customer_uuid, region_uuid)
-    create_host_signing_token(vault, consul, customer_uuid, region_uuid, rolename)
 
     # Construct a tree to place under the region services "vouch" section
 
@@ -208,11 +201,13 @@ def fabricate_missing_data(consul, customer_uuid, region_uuid):
         }
     }
 
+    # these were in vouch_tree, but they are created at the end of this function
+    # 'ca_signing_role': ca_signing_role,
+    # 'host_signing_token': host_signing_token,
+
     vouch_tree = {
         'ca_common_name': ca_common_name,
         'ca_name': ca_name,
-        'ca_signing_role': ca_signing_role,
-        'host_signing_token': host_signing_token,
         'vault': vault_tree,
         'vault_servers': vault_servers_tree,
     }
@@ -220,7 +215,16 @@ def fabricate_missing_data(consul, customer_uuid, region_uuid):
     full_tree = { 'customers': { customer_uuid: { 'regions': { region_uuid: { 'services': { 'vouch': vouch_tree }}}}}}
     consul.kv_put_dict(full_tree)
 
+    # The earlier, legacy host_signing_token had policies: [default hosts-{customer_uuid}]
+    # But this has region-specific rules in it so it must be at the region level.
+    # Instead, generate a new token and policy:
+
+    vault = get_vault_admin_client(consul, customer_uuid)
+    rolename = create_host_signing_role(vault, consul, customer_uuid, region_uuid)
+    create_host_signing_token(vault, consul, customer_uuid, region_uuid, rolename)
+
     return ca_name
+
 
 def get_vault_admin_client(consul, customer_uuid):
     region_uuid = os.environ['REGION_ID'] # to minimize signature changes
