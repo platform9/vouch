@@ -17,6 +17,29 @@ logging.basicConfig(level=logging.DEBUG)
 LOG = logging.getLogger(__name__)
 
 """
+note from tdell:
+
+Originally there lived a single "vouch" section at the customer level. It was written at a time
+when we supported only single regions, and when multi-region support was finally added, it would be
+clobbered by subsequent region deployments. This meant hosts could only be onboarded to the
+region most recently deployed.
+
+Now there are "service/vouch" sections at the region level. Though we have a legacy vouch
+section at the customer level, please mostly ignore it.
+
+The ca_signing_role was originally hosts-{customer_name}. But in it we find a policy for a single
+region, so we had a choice to either add additional regions to this policy, or create policies
+for each region. The latter decision was taken.
+
+Now each region has its own ca_signing_role as hosts-{region_name}.
+
+Some old deployments are extant. There is now a fabricate_missing_data() function that creates
+a region-level vouch configuration during upgrade. In doing so it might create new vault tokens.
+
+I did not enjoy untangling this.
+"""
+
+"""
 init-region utility for setting up the vouch environment. Expects the following
 as a starting point:
 
@@ -144,9 +167,9 @@ def fabricate_missing_data(consul, customer_uuid, region_uuid):
     du_fqdn = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/fqdn')
     ca_common_name = du_fqdn.split(".")[0]
 
-    # Our ca_signing_role is the same across all regions
+    # Our ca_signing_role is per-region, but used to be per-customer
 
-    ca_signing_role = f'hosts-{customer_uuid}'
+    ca_signing_role = f'hosts-{region_uuid}'
 
     # The server key is strange, since this seems to be an unneeded abstraction. We have
     # always called it 'dev' for some reason, so this is hardcoded in deccaxon and vouch now.
@@ -158,11 +181,18 @@ def fabricate_missing_data(consul, customer_uuid, region_uuid):
     vault_server = consul.kv_get(f'{server_key}/url')
 
     # The admin token has policies: [default kplane]
-    # The host_signing_token has policies: [default hosts-{customer_uuid}]
     # Both should work for all regions.
 
     admin_token = consul.kv_get(f'customers/{customer_uuid}/vault_servers/dev/admin_token')
-    host_signing_token = consul.kv_get(f'customers/{customer_uuid}/vouch/vault/host_signing_token')
+
+    # The earlier, legacy host_signing_token had policies: [default hosts-{customer_uuid}]
+    # Tried to do this, but the token has region-specific policy:
+    #   host_signing_token = consul.kv_get(f'customers/{customer_uuid}/vouch/vault/host_signing_token')
+    # Instead, generate a new token and policy:
+
+    vault = get_vault_admin_client(consul, customer_uuid)
+    rolename = create_host_signing_role(vault, consul, customer_uuid, region_uuid)
+    create_host_signing_token(vault, consul, customer_uuid, region_uuid, rolename)
 
     # Construct a tree to place under the region services "vouch" section
 
@@ -212,26 +242,27 @@ def get_vault_admin_client(consul, customer_uuid):
     return VaultCA(url, token, ca_name, ca_common_name)
 
 
-def create_host_signing_role(vault, consul, customer_id) -> str:
-    region_uuid = os.environ['REGION_ID']
-    rolename = 'hosts-%s' % customer_id
-    customer_key: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/ca_signing_role'
+def create_host_signing_role(vault, consul, customer_id, region_id) -> str:
+    rolename = 'hosts-%s' % region_id
+    customer_key: str = f'customers/{customer_id}/regions/{region_id}/services/vouch/ca_signing_role'
     try:
         val = consul.kv_get(customer_key)
         LOG.debug('kv_get for %s returned: %s', customer_key, val)
-        return rolename
+        if val == rolename:
+            return rolename
     except HTTPError as err:
         if err.response.status_code != 404:
             LOG.error('cannot do kv_get on %s', customer_key, exc_info=err)
             raise err
-        vault.create_signing_role(rolename)
-        consul.kv_put(customer_key, rolename)
-        return rolename
+    # either a) the signing role hasn't been created, or b) it has a customer-level one
+    # older signing roles were hosts-{customer_id} not hosts-{region_id}
+    vault.create_signing_role(rolename)
+    consul.kv_put(customer_key, rolename)
+    return rolename
 
 
-def create_host_signing_token(vault, consul, customer_id, rolename, token_rolename='vouch-hosts'):
-    region_uuid = os.environ['REGION_ID']
-    policy_name = 'hosts-%s' % customer_id
+def create_host_signing_token(vault, consul, customer_id, region_uuid, rolename, token_rolename='vouch-hosts'):
+    policy_name = 'hosts-%s' % region_uuid
     customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
     customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
     try:
@@ -257,6 +288,10 @@ def parse():
     return args, consul
 
 def new_token(consul, customer_id):
+    # obtain the region_id from the environment. We do not want to change the
+    # signature of this function since it is called from outside.
+    region_id = os.environ['REGION_ID']
+
     vault = get_vault_admin_client(consul, customer_id)
-    rolename = create_host_signing_role(vault, consul, customer_id)
+    rolename = create_host_signing_role(vault, consul, customer_id, region_id)
     create_host_signing_token(vault, consul, customer_id, rolename)
