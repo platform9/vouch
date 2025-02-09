@@ -298,4 +298,4 @@ def new_token(consul, customer_id):
 
     vault = get_vault_admin_client(consul, customer_id)
     rolename = create_host_signing_role(vault, consul, customer_id, region_id)
-    create_host_signing_token(vault, consul, customer_id, rolename)
+    create_host_signing_token(vault, consul, customer_id, region_id, rolename)
