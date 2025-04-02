@@ -267,21 +267,14 @@ def create_host_signing_role(vault, consul, customer_id, region_id) -> str:
 
 def create_host_signing_token(vault, consul, customer_id, region_uuid, rolename, token_rolename='vouch-hosts'):
     policy_name = 'hosts-%s' % region_uuid
+
     customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
     customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
-    try:
-        url = consul.kv_get(customer_vault_url)
-        LOG.debug('consul kv_get on %s returned: %s', customer_vault_url, url)
-        host_signing_token = consul.kv_get(customer_vault_hsk)
-        LOG.debug('consul kv_get on %s returned: %s', customer_vault_hsk, host_signing_token)
-    except HTTPError as err:
-        if err.response.status_code != 404:
-            LOG.error('cannot perform consul operation', exc_info=err)
-            raise err
-        vault.create_vouch_token_policy(rolename, policy_name)
-        token_info = vault.create_token(policy_name, token_role=token_rolename)
-        consul.kv_put(customer_vault_url, vault.addr)
-        consul.kv_put(customer_vault_hsk, token_info.json()['auth']['client_token'])
+
+    vault.create_vouch_token_policy(rolename, policy_name)
+    token_info = vault.create_token(policy_name, token_role=token_rolename)
+    consul.kv_put(customer_vault_url, vault.addr)
+    consul.kv_put(customer_vault_hsk, token_info.json()['auth']['client_token'])
 
 
 def parse():
