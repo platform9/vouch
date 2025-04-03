@@ -59,17 +59,26 @@ unit-test: $(VENV)
 	$(VENV)/bin/nosetests -vd .
 
 image: stage
-	docker build -t $(DOCKER_REPOSITORY):$(IMAGE_TAG) \
+	if ! docker buildx inspect pcd-graviton >/dev/null 2>&1; then \
+		docker buildx create --name pcd-graviton --use --bootstrap; \
+	else \
+		docker buildx use pcd-graviton; \
+	fi && \
+	docker buildx build --platform linux/arm64,linux/amd64 \
+		--rm -t $(DOCKER_REPOSITORY):$(IMAGE_TAG) \
 		--build-arg BUILD_ID=$(BUILD_ID) \
 		--build-arg VERSION=$(PF9_VERSION) \
 		--build-arg BRANCH=$(BRANCH_NAME) \
 		--build-arg APP_METADATA="$$(python $(SRCROOT)/y2j $(STAGE)/app_metadata.yaml)" \
+		--file $(STAGE)/Dockerfile \
+		--push \
 		$(STAGE)
+
 
 # This assumes that credentials for the aws tool are configured, either in
 # ~/.aws/config or in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY
 push: image $(BUILD_DIR)/container-tag
-	  docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG)
+#	  docker push $(DOCKER_REPOSITORY):$(IMAGE_TAG)
 
 clean:
 	rm -rf $(VENV)
