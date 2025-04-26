@@ -221,9 +221,11 @@ jobs:
           echo "🛡️  Running Trivy scan (HIGH/CRITICAL)..."
           mkdir -p tmp
           trivy fs --format json --severity HIGH,CRITICAL --output tmp/trivy.json .
-          [[ -f tmp/trivy.json ]] || echo '{}' > tmp/trivy.json
-          if grep -q '"num":0' <<<"$(tail -n +1 tmp/trivy.json 2>/dev/null)"; then
-            echo "ℹ️  No language‑specific files detected — skipping vulnerability count."
+          [[ -f tmp/trivy.json ]] || echo '{"Results":[]}' > tmp/trivy.json
+
+          # Safely exit if Results are missing or empty
+          if ! jq -e '.Results and (.Results | length > 0)' tmp/trivy.json >/dev/null; then
+            echo "ℹ️  No scan results available — likely no supported files found."
             echo "trivy_issues_found=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
