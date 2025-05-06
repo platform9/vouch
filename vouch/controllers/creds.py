@@ -43,7 +43,7 @@ class ListCredsController(RestController):
         """
         LOG.info('Fetching credentials for user')
         try:
-            creds =  self._consul.kv_get_prefix(self._prefix+ '/keystone/users/%s/password' % user)
+            creds =  self._consul.kv_get(self._prefix+ '/keystone/users/%s/password' % user)
             pecan.response.status = 200
             pecan.response.json = creds 
         except Exception as e:
