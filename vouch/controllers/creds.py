@@ -44,6 +44,10 @@ class ListCredsController(RestController):
         LOG.info('Fetching credentials for user')
         try:
             creds =  self._consul.kv_get(self._prefix+ '/keystone/users/%s/password' % user)
+            if creds is None:
+                LOG.warning('Credentials not found for user: %s', user)
+                return _json_error_response(pecan.response, 404, 'Credentials not found for user: %s' % user)
+
             pecan.response.status = 200
             pecan.response.json = creds 
         except Exception as e:
