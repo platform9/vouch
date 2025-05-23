@@ -9,6 +9,7 @@ from pecan.rest import RestController
 
 from vouch.conf import CONF
 from firkinize.configstore.consul import Consul
+import requests
 
 LOG = logging.getLogger(__name__)
 
@@ -44,12 +45,15 @@ class ListCredsController(RestController):
         LOG.info('Fetching credentials for user')
         try:
             creds =  self._consul.kv_get(self._prefix+ '/keystone/users/%s/password' % user)
-            if creds is None:
-                LOG.warning('Credentials not found for user: %s', user)
-                return _json_error_response(pecan.response, 404, 'Credentials not found for user: %s' % user)
-
             pecan.response.status = 200
-            pecan.response.json = creds 
+            pecan.response.json = creds
+        except requests.exceptions.HTTPError as e:
+            if e.response is not None and e.response.status_code == 404:
+                LOG.warning('Credentials not found for user: %s', user)
+                return _json_error_response(pecan.response, 404, f'Credentials not found for user: {user}')
+            else:
+                LOG.error('HTTP error while fetching credentials: %s', e)
+                return _json_error_response(pecan.response, 500, str(e)) 
         except Exception as e:
             LOG.error('Could not fetch credential from consul', e)
             return _json_error_response(pecan.response, 500, e)
