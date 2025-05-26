@@ -49,7 +49,7 @@ class ListCredsController(RestController):
             pecan.response.json = creds
         except requests.exceptions.HTTPError as e:
             if e.response is not None and e.response.status_code == 404:
-                LOG.warning('Credentials not found for user: %s', user)
+                LOG.error('Credentials not found for user: %s', user)
                 return _json_error_response(pecan.response, 404, f'Credentials not found for user: {user}')
             else:
                 LOG.error('HTTP error while fetching credentials: %s', e)
