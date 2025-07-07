@@ -1,0 +1,500 @@
+bin/common.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   #!/bin/env python
+ 2 |
+ 3 | / import logging
+ 4 | | import os
+ 5 | | import random
+ 6 | | import requests
+ 7 | | import string
+ 8 | | import sys
+ 9 | |
+10 | | from argparse import ArgumentParser
+11 | | from firkinize.configstore.consul import Consul
+12 | | from requests import HTTPError
+13 | | from vaultlib.ca import VaultCA
+   | |_______________________________^ I001
+14 |
+15 |   logging.basicConfig(level=logging.DEBUG)
+   |
+   = help: Organize imports
+
+bin/common.py:8:8: F401 [*] `sys` imported but unused
+   |
+ 6 | import requests
+ 7 | import string
+ 8 | import sys
+   |        ^^^ F401
+ 9 |
+10 | from argparse import ArgumentParser
+   |
+   = help: Remove unused import: `sys`
+
+bin/common.py:22:89: E501 Line too long (95 > 88)
+   |
+20 | note from tdell:
+21 |
+22 | Originally there lived a single "vouch" section at the customer level. It was written at a time
+   |                                                                                         ^^^^^^^ E501
+23 | when we supported only single regions, and when multi-region support was finally added, it would be
+24 | clobbered by subsequent region deployments. This meant hosts could only be onboarded to the
+   |
+
+bin/common.py:23:89: E501 Line too long (99 > 88)
+   |
+22 | Originally there lived a single "vouch" section at the customer level. It was written at a time
+23 | when we supported only single regions, and when multi-region support was finally added, it would be
+   |                                                                                         ^^^^^^^^^^^ E501
+24 | clobbered by subsequent region deployments. This meant hosts could only be onboarded to the
+25 | region most recently deployed.
+   |
+
+bin/common.py:24:89: E501 Line too long (91 > 88)
+   |
+22 | Originally there lived a single "vouch" section at the customer level. It was written at a time
+23 | when we supported only single regions, and when multi-region support was finally added, it would be
+24 | clobbered by subsequent region deployments. This meant hosts could only be onboarded to the
+   |                                                                                         ^^^ E501
+25 | region most recently deployed.
+   |
+
+bin/common.py:27:89: E501 Line too long (89 > 88)
+   |
+25 | region most recently deployed.
+26 |
+27 | Now there are "service/vouch" sections at the region level. Though we have a legacy vouch
+   |                                                                                         ^ E501
+28 | section at the customer level, please mostly ignore it.
+   |
+
+bin/common.py:30:89: E501 Line too long (97 > 88)
+   |
+28 | section at the customer level, please mostly ignore it.
+29 |
+30 | The ca_signing_role was originally hosts-{customer_name}. But in it we find a policy for a single
+   |                                                                                         ^^^^^^^^^ E501
+31 | region, so we had a choice to either add additional regions to this policy, or create policies
+32 | for each region. The latter decision was taken.
+   |
+
+bin/common.py:31:89: E501 Line too long (94 > 88)
+   |
+30 | The ca_signing_role was originally hosts-{customer_name}. But in it we find a policy for a single
+31 | region, so we had a choice to either add additional regions to this policy, or create policies
+   |                                                                                         ^^^^^^ E501
+32 | for each region. The latter decision was taken.
+   |
+
+bin/common.py:36:89: E501 Line too long (94 > 88)
+   |
+34 | Now each region has its own ca_signing_role as hosts-{region_name}.
+35 |
+36 | Some old deployments are extant. There is now a fabricate_missing_data() function that creates
+   |                                                                                         ^^^^^^ E501
+37 | a region-level vouch configuration during upgrade. In doing so it might create new vault tokens.
+   |
+
+bin/common.py:37:89: E501 Line too long (96 > 88)
+   |
+36 | Some old deployments are extant. There is now a fabricate_missing_data() function that creates
+37 | a region-level vouch configuration during upgrade. In doing so it might create new vault tokens.
+   |                                                                                         ^^^^^^^^ E501
+38 |
+39 | I did not enjoy untangling this.
+   |
+
+bin/common.py:98:89: E501 Line too long (90 > 88)
+    |
+ 96 |                         help='The keystone customer id', required=True)
+ 97 |     parser.add_argument('--region-id',
+ 98 |                         help='The region id for which to bootstrap the keystone endpoint',
+    |                                                                                         ^^ E501
+ 99 |                         required=True)
+100 |     parser.add_argument('--config-token',
+    |
+
+bin/common.py:155:89: E501 Line too long (106 > 88)
+    |
+153 |     LOG.info(f'fabricating regional vouch config for {region_uuid}')
+154 |
+155 |     cert_version = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/certs/current_version')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^ E501
+156 |
+157 |     # Obtain the shared_ca_name, which is quite possibly clobbered. We only need the very first component
+    |
+
+bin/common.py:157:89: E501 Line too long (105 > 88)
+    |
+155 |     cert_version = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/certs/current_version')
+156 |
+157 |     # Obtain the shared_ca_name, which is quite possibly clobbered. We only need the very first component
+    |                                                                                         ^^^^^^^^^^^^^^^^^ E501
+158 |     # of this, the secrets engine, which might look like "pki" or "pki_prod" or "pki_pmkft", etc.
+    |
+
+bin/common.py:158:89: E501 Line too long (97 > 88)
+    |
+157 |     # Obtain the shared_ca_name, which is quite possibly clobbered. We only need the very first component
+158 |     # of this, the secrets engine, which might look like "pki" or "pki_prod" or "pki_pmkft", etc.
+    |                                                                                         ^^^^^^^^^ E501
+159 |
+160 |     # looks like "pki/versioned/9d524532-61f0-41ac-a85a-64a3f5ac0656/v0"
+    |
+
+bin/common.py:174:5: F841 Local variable `ca_signing_role` is assigned to but never used
+    |
+172 |     # Our ca_signing_role is per-region, but used to be per-customer
+173 |
+174 |     ca_signing_role = f'hosts-{region_uuid}'
+    |     ^^^^^^^^^^^^^^^ F841
+175 |
+176 |     # The server key is strange, since this seems to be an unneeded abstraction. We have
+    |
+    = help: Remove assignment to unused variable `ca_signing_role`
+
+bin/common.py:177:89: E501 Line too long (93 > 88)
+    |
+176 |     # The server key is strange, since this seems to be an unneeded abstraction. We have
+177 |     # always called it 'dev' for some reason, so this is hardcoded in deccaxon and vouch now.
+    |                                                                                         ^^^^^ E501
+178 |
+179 |     server_key = f'customers/{customer_uuid}/vault_servers/dev'
+    |
+
+bin/common.py:188:89: E501 Line too long (91 > 88)
+    |
+186 |     # This is independent of region.
+187 |
+188 |     admin_token = consul.kv_get(f'customers/{customer_uuid}/vault_servers/dev/admin_token')
+    |                                                                                         ^^^ E501
+189 |
+190 |     # Construct a tree to place under the region services "vouch" section
+    |
+
+bin/common.py:215:89: E501 Line too long (118 > 88)
+    |
+213 |     }
+214 |
+215 |     full_tree = { 'customers': { customer_uuid: { 'regions': { region_uuid: { 'services': { 'vouch': vouch_tree }}}}}}
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+216 |     consul.kv_put_dict(full_tree)
+    |
+
+bin/common.py:218:89: E501 Line too long (90 > 88)
+    |
+216 |     consul.kv_put_dict(full_tree)
+217 |
+218 |     # The earlier, legacy host_signing_token had policies: [default hosts-{customer_uuid}]
+    |                                                                                         ^^ E501
+219 |     # But this has region-specific rules in it so it must be at the region level.
+220 |     # Instead, generate a new token and policy:
+    |
+
+bin/common.py:233:89: E501 Line too long (106 > 88)
+    |
+232 |     try:
+233 |         ca_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_name')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^ E501
+234 |     except requests.HTTPError as e:
+235 |         if e.response.status_code != 404:
+    |
+
+bin/common.py:239:89: E501 Line too long (116 > 88)
+    |
+237 |         ca_name = fabricate_missing_data(consul, customer_uuid, region_uuid)
+238 |
+239 |     ca_common_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_common_name')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+240 |
+241 |     vault_server_key = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/vault/server_key')
+    |
+
+bin/common.py:241:89: E501 Line too long (120 > 88)
+    |
+239 |     ca_common_name = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/ca_common_name')
+240 |
+241 |     vault_server_key = consul.kv_get(f'customers/{customer_uuid}/regions/{region_uuid}/services/vouch/vault/server_key')
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+242 |     with consul.prefix(vault_server_key):
+243 |         url = consul.kv_get('url')
+    |
+
+bin/common.py:251:89: E501 Line too long (101 > 88)
+    |
+249 | def create_host_signing_role(vault, consul, customer_id, region_id) -> str:
+250 |     rolename = 'hosts-%s' % region_id
+251 |     customer_key: str = f'customers/{customer_id}/regions/{region_id}/services/vouch/ca_signing_role'
+    |                                                                                         ^^^^^^^^^^^^^ E501
+252 |     try:
+253 |         val = consul.kv_get(customer_key)
+    |
+
+bin/common.py:268:89: E501 Line too long (111 > 88)
+    |
+268 | def create_host_signing_token(vault, consul, customer_id, region_uuid, rolename, token_rolename='vouch-hosts'):
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^ E501
+269 |     policy_name = 'hosts-%s' % region_uuid
+    |
+
+bin/common.py:271:89: E501 Line too long (103 > 88)
+    |
+269 |     policy_name = 'hosts-%s' % region_uuid
+270 |
+271 |     customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
+    |                                                                                         ^^^^^^^^^^^^^^^ E501
+272 |     customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
+    |
+
+bin/common.py:272:89: E501 Line too long (118 > 88)
+    |
+271 |     customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
+272 |     customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
+    |                                                                                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ E501
+273 |
+274 |     vault.create_vouch_token_policy(rolename, policy_name)
+    |
+
+setup.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | from setuptools import setup, find_packages
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ I001
+2 |
+3 | setup(
+  |
+  = help: Organize imports
+
+vouch/app.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | from pecan import make_app
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^ I001
+2 |
+3 | def setup_app(config):
+  |
+  = help: Organize imports
+
+vouch/conf.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+2 |   # pylint: disable=global-statement
+3 | / import os
+4 | | import yaml
+  | |___________^ I001
+5 |
+6 |   CONF = None
+  |
+  = help: Organize imports
+
+vouch/controllers/CA.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   # pylint: disable=too-few-public-methods
+ 2 |
+ 3 | / import logging
+ 4 | | import pecan
+ 5 | | import re
+ 6 | |
+ 7 | | from pecan import expose
+ 8 | | from pecan.rest import RestController
+ 9 | |
+10 | | from vouch.conf import CONF
+11 | | from firkinize.configstore.consul import Consul
+   | |_______________________________________________^ I001
+12 |
+13 |   LOG = logging.getLogger(__name__)
+   |
+   = help: Organize imports
+
+vouch/controllers/CA.py:34:89: E501 Line too long (91 > 88)
+   |
+32 |             CONF['consul_token'],
+33 |         )
+34 |         self._prefix = 'customers/%s/regions/%s' % (CONF['customer_id'], CONF['region_id'])
+   |                                                                                         ^^^ E501
+35 |
+36 |     @expose('json')
+   |
+
+vouch/controllers/creds.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   # pylint: disable=too-few-public-methods
+ 2 |
+ 3 | / import logging
+ 4 | | import pecan
+ 5 | | import re
+ 6 | |
+ 7 | | from pecan import expose
+ 8 | | from pecan.rest import RestController
+ 9 | |
+10 | | from vouch.conf import CONF
+11 | | from firkinize.configstore.consul import Consul
+12 | | import requests
+   | |_______________^ I001
+13 |
+14 |   LOG = logging.getLogger(__name__)
+   |
+   = help: Organize imports
+
+vouch/controllers/creds.py:5:8: F401 [*] `re` imported but unused
+  |
+3 | import logging
+4 | import pecan
+5 | import re
+  |        ^^ F401
+6 |
+7 | from pecan import expose
+  |
+  = help: Remove unused import: `re`
+
+vouch/controllers/creds.py:47:89: E501 Line too long (92 > 88)
+   |
+45 |         LOG.info('Fetching credentials for user')
+46 |         try:
+47 |             creds =  self._consul.kv_get(self._prefix+ '/keystone/users/%s/password' % user)
+   |                                                                                         ^^^^ E501
+48 |             pecan.response.status = 200
+49 |             pecan.response.json = creds
+   |
+
+vouch/controllers/creds.py:53:89: E501 Line too long (107 > 88)
+   |
+51 |             if e.response is not None and e.response.status_code == 404:
+52 |                 LOG.error('Credentials not found for user: %s', user)
+53 |                 return _json_error_response(pecan.response, 404, f'Credentials not found for user: {user}')
+   |                                                                                         ^^^^^^^^^^^^^^^^^^^ E501
+54 |             else:
+55 |                 LOG.error('HTTP error while fetching credentials: %s', e)
+   |
+
+vouch/controllers/metrics_controller.py:2:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 2 | / import logging
+ 3 | | import pecan
+ 4 | | import time
+ 5 | | import requests
+ 6 | | from cryptography import x509
+ 7 | | from cryptography.hazmat.backends import default_backend
+ 8 | | from pecan import expose
+ 9 | | from pecan.rest import RestController
+10 | |
+11 | | from vouch.conf import CONF
+12 | | from vaultlib.ca import VaultCA
+13 | | from prometheus_client import generate_latest, Gauge
+   | |____________________________________________________^ I001
+14 |
+15 |   g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
+   |
+   = help: Organize imports
+
+vouch/controllers/metrics_controller.py:16:89: E501 Line too long (89 > 88)
+   |
+15 | g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
+16 | g_ca_cert_expiry_time = Gauge('cert_expiry_time', 'Time in seconds till CA cert expires')
+   |                                                                                         ^ E501
+   |
+
+vouch/controllers/root.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | / from vouch.controllers.v1 import V1Controller
+2 | | from vouch.controllers.metrics_controller import MetricsController
+3 | | from pecan import expose
+4 | | from pecan.rest import RestController
+5 | |
+6 | | from vouch.conf import CONF
+  | |___________________________^ I001
+7 |
+8 |   class RootController(RestController):
+  |
+  = help: Organize imports
+
+vouch/controllers/sign.py:3:1: I001 [*] Import block is un-sorted or un-formatted
+   |
+ 1 |   # pylint: disable=too-few-public-methods
+ 2 |
+ 3 | / import logging
+ 4 | | import pecan
+ 5 | | import requests
+ 6 | | from cryptography import x509
+ 7 | | from cryptography.hazmat.backends import default_backend
+ 8 | | from pecan import expose
+ 9 | | from pecan.rest import RestController
+10 | |
+11 | | from vouch.conf import CONF
+12 | | from vaultlib.ca import VaultCA
+   | |_______________________________^ I001
+   |
+   = help: Organize imports
+
+vouch/controllers/sign.py:92:16: E713 [*] Test for membership should be `not in`
+   |
+90 |         """
+91 |         req = pecan.request.json
+92 |         if not 'csr' in req:
+   |                ^^^^^^^^^^^^ E713
+93 |             pecan.response.status = 400
+94 |             pecan.response.json = {
+   |
+   = help: Convert to `not in`
+
+vouch/controllers/sign.py:98:89: E501 Line too long (92 > 88)
+    |
+ 96 |             }
+ 97 |         else:
+ 98 |             csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
+    |                                                                                         ^^^^ E501
+ 99 |             LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
+100 |             ca_name = CONF['ca_name']
+    |
+
+vouch/controllers/sign.py:100:13: F841 Local variable `ca_name` is assigned to but never used
+    |
+ 98 |             csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
+ 99 |             LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
+100 |             ca_name = CONF['ca_name']
+    |             ^^^^^^^ F841
+101 |             signing_role = CONF['signing_role']
+102 |             csr = req['csr']
+    |
+    = help: Remove assignment to unused variable `ca_name`
+
+vouch/controllers/v1.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | / from vouch.controllers.sign import SignController
+2 | | from vouch.controllers.CA import ListCAController
+3 | | from vouch.controllers.creds import ListCredsController
+  | |_______________________________________________________^ I001
+4 |
+5 |   class V1Controller(object):
+  |
+  = help: Organize imports
+
+vouch/tests/test_sign.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | / from unittest import TestCase
+2 | |
+3 | | import vouch
+  | |____________^ I001
+4 |
+5 |   class TestSign(TestCase):
+  |
+  = help: Organize imports
+
+vouch/tests/test_sign.py:3:8: F401 [*] `vouch` imported but unused
+  |
+1 | from unittest import TestCase
+2 |
+3 | import vouch
+  |        ^^^^^ F401
+4 |
+5 | class TestSign(TestCase):
+  |
+  = help: Remove unused import: `vouch`
+
+vouch/wsgi.py:1:1: I001 [*] Import block is un-sorted or un-formatted
+  |
+1 | from pecan.deploy import deploy
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ I001
+2 |
+3 | # paste factory:
+  |
+  = help: Organize imports
+
+Found 46 errors.
+[*] 16 fixable with the `--fix` option (2 hidden fixes can be enabled with the `--unsafe-fixes` option).
