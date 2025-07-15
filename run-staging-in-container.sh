@@ -2,7 +2,7 @@
 
 
 set -exu
-CONTAINER_BUILD_IMAGE=artifactory.platform9.horse/docker-local/py39-build-image:latest
+CONTAINER_BUILD_IMAGE=artifactory.platform9.horse/docker-local/py39-build-image:pcd-graviton-v2
 
 THIS_FILE=$(realpath $0)
 THIS_DIR=$(dirname ${THIS_FILE})
