@@ -1,4 +1,4 @@
-from artifactory.platform9.horse/docker-local/pf9-py39-baseimg-alpine:pcd-graviton-v2
+from artifactory.platform9.horse/docker-local/pf9-py39-baseimg-alpine:pcd-graviton-v4
 
 RUN apk update && apk add bash \
     && apk add curl \
