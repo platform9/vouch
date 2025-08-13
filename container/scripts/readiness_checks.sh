@@ -6,6 +6,7 @@ VAULT_TOKEN=$(grep vault_token /etc/vouch/vouch-keystone.conf | awk '{ print $2 
 TOKEN_HEALTH_STATUS=$(curl -o /dev/null -s -w "%{http_code}\n" --header "X-Vault-Token: $VAULT_TOKEN" $VAULT_URL/v1/auth/token/lookup-self)
 
 if [ $TOKEN_HEALTH_STATUS != "200" ]; then
+	echo "Service is not healthy, received $TOKEN_HEALTH_STATUS" > /proc/1/fd/1
 	exit 1
 fi
 
