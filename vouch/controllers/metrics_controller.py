@@ -43,6 +43,7 @@ class  MetricsController(RestController):
         # For querying host signing token expiry
         self.vault_token = CONF['vault_token']
         self.host_signing_token_expiry = None
+        self.host_signing_token_last_update_time = 0
         self.host_signing_token_last_update_time = time.time()
         self.customer_uuid = os.environ['CUSTOMER_ID']
         _, self.consul = parse()
@@ -51,7 +52,9 @@ class  MetricsController(RestController):
     def get_host_signing_token_expiry(self):
         current_time = time.time()
     
-        if ((current_time - self.host_signing_token_last_update_time) > CONF['vault_query_interval']):
+        if (self.host_signing_token_expiry is None) or \
+           ((current_time - self.host_signing_token_last_update_time) > 60):
+
             vault_url = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/url')
             host_signing_token = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/host_signing_token')
 
