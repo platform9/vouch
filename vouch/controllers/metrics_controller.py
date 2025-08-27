@@ -22,8 +22,10 @@ g_ca_cert_expiry_time = Gauge('cert_expiry_time', 'Time in seconds till CA cert 
 g_host_signing_token_expiry = Gauge('host_signing_token_expiry', 'Time in seconds till host signing token expires')
 
 
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s - %(name)s - %(threadName)s - '
+                           '%(levelname)s - %(message)s')
 LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
 
 def query_vault(vault):
     resp = vault.get_ca()
