@@ -3,6 +3,7 @@ import os
 import logging
 import pecan
 import time
+import calendar
 import requests
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -13,6 +14,7 @@ from vouch.conf import CONF
 from vaultlib.ca import VaultCA
 from prometheus_client import generate_latest, Gauge
 from bin.common import parse
+from datetime import datetime
 
 
 g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
@@ -21,6 +23,7 @@ g_host_signing_token_expiry = Gauge('host_signing_token_expiry', 'Time in second
 
 
 LOG = logging.getLogger(__name__)
+LOG.setLevel(logging.DEBUG)
 
 def query_vault(vault):
     resp = vault.get_ca()
@@ -48,31 +51,49 @@ class  MetricsController(RestController):
         self.customer_uuid = os.environ['CUSTOMER_ID']
         _, self.consul = parse()
 
+        LOG.debug(f"MetricsController initialized with customer ID: {self.customer_uuid}")
+
     
     def get_host_signing_token_expiry(self):
         current_time = time.time()
+        LOG.debug("Fetching host signing token expiry...")
     
-        if (self.host_signing_token_expiry is None) or \
-           ((current_time - self.host_signing_token_last_update_time) > 60):
-
+        try:
+            LOG.debug("Cache expired or empty. Querying Consul for vault URL and token...")
             vault_url = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/url')
             host_signing_token = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/host_signing_token')
 
-            headers = {'X-Vault-Token': self.vault_token}  # Management token
+            LOG.debug(f"Vault URL: {vault_url}")
+            LOG.debug(f"Host signing token: {host_signing_token[:5]}... (masked)")
+
+            headers = {'X-Vault-Token': self.vault_token}
             payload = {"token": host_signing_token}
 
+            LOG.debug("Sending request to Vault token lookup API...")
             response = requests.post(f'{vault_url}/v1/auth/token/lookup', headers=headers, json=payload)
+
             if response.status_code != 200:
-                raise Exception(f"Failed to lookup token: {response.text}")
+                LOG.error(f"Vault token lookup failed: {response.status_code}, {response.text}")
+                return None
 
             token_info = response.json()
-            expire_time = token_info['data'].get('expire_time')  # e.g. "2025-08-30T12:34:56Z"
+            expire_time = token_info['data'].get('expire_time')
+            LOG.debug(f"Expire time from Vault: {expire_time}")
 
-            self.host_signing_token_expiry = expire_time
-            self.host_signing_token_last_update_time = current_time
+            if expire_time:
+                dt = datetime.strptime(expire_time, "%Y-%m-%dT%H:%M:%SZ")
+                epoch_expire_time = calendar.timegm(dt.timetuple())
+                self.host_signing_token_expiry = epoch_expire_time
+                self.host_signing_token_last_update_time = current_time
+                LOG.debug(f"Host signing token expiry (epoch): {epoch_expire_time}")
+            else:
+                LOG.warning("expire_time not found in Vault response.")
 
-            return self.host_signing_token_expiry
+        except Exception as e:
+                LOG.exception(f"Error while fetching host signing token expiry: {e}")
+                return None
 
+        return self.host_signing_token_expiry
 
     def get_cert_expiration_time(self):
         current_time = time.time()
