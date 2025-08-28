@@ -13,8 +13,8 @@ from pecan.rest import RestController
 from vouch.conf import CONF
 from vaultlib.ca import VaultCA
 from prometheus_client import generate_latest, Gauge
-from bin.common import parse
 from datetime import datetime
+from firkinize.configstore.consul import Consul
 
 
 g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
@@ -26,6 +26,10 @@ logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(threadName)s - '
                            '%(levelname)s - %(message)s')
 LOG = logging.getLogger(__name__)
+
+def write_debug(msg):
+    with open("/tmp/vouch_debug.log", "a") as f:
+        f.write(f"[{datetime.now()}] {msg}\n")
 
 def query_vault(vault):
     resp = vault.get_ca()
@@ -48,30 +52,31 @@ class  MetricsController(RestController):
         # For querying host signing token expiry
         self.vault_token = CONF['vault_token']
         self.host_signing_token_expiry = None
-        self.host_signing_token_last_update_time = 0
         self.host_signing_token_last_update_time = time.time()
         self.customer_uuid = os.environ['CUSTOMER_ID']
-        _, self.consul = parse()
+        config_url = os.environ.get('CONSUL_HTTP_ADDR', None)
+        token = os.environ.get('CONSUL_HTTP_TOKEN', None)
+        self.consul = Consul(config_url, token=token)
 
-        LOG.debug(f"MetricsController initialized with customer ID: {self.customer_uuid}")
+        write_debug(f"MetricsController initialized with customer ID: {self.customer_uuid}")
 
     
     def get_host_signing_token_expiry(self):
         current_time = time.time()
-        LOG.debug("Fetching host signing token expiry...")
+        write_debug("Fetching host signing token expiry...")
     
         try:
-            LOG.debug("Cache expired or empty. Querying Consul for vault URL and token...")
+            write_debug("Cache expired or empty. Querying Consul for vault URL and token...")
             vault_url = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/url')
             host_signing_token = self.consul.kv_get(f'customers/{self.customer_uuid}/vouch/vault/host_signing_token')
 
-            LOG.debug(f"Vault URL: {vault_url}")
-            LOG.debug(f"Host signing token: {host_signing_token[:5]}... (masked)")
+            write_debug(f"Vault URL: {vault_url}")
+            write_debug(f"Host signing token: {host_signing_token[:5]}... (masked)")
 
             headers = {'X-Vault-Token': self.vault_token}
             payload = {"token": host_signing_token}
 
-            LOG.debug("Sending request to Vault token lookup API...")
+            write_debug("Sending request to Vault token lookup API...")
             response = requests.post(f'{vault_url}/v1/auth/token/lookup', headers=headers, json=payload)
 
             if response.status_code != 200:
@@ -80,19 +85,19 @@ class  MetricsController(RestController):
 
             token_info = response.json()
             expire_time = token_info['data'].get('expire_time')
-            LOG.debug(f"Expire time from Vault: {expire_time}")
+            write_debug(f"Expire time from Vault: {expire_time}")
 
             if expire_time:
                 dt = datetime.strptime(expire_time, "%Y-%m-%dT%H:%M:%SZ")
                 epoch_expire_time = calendar.timegm(dt.timetuple())
                 self.host_signing_token_expiry = epoch_expire_time
                 self.host_signing_token_last_update_time = current_time
-                LOG.debug(f"Host signing token expiry (epoch): {epoch_expire_time}")
+                write_debug(f"Host signing token expiry (epoch): {epoch_expire_time}")
             else:
-                LOG.warning("expire_time not found in Vault response.")
+                write_debug("expire_time not found in Vault response.")
 
         except Exception as e:
-                LOG.exception(f"Error while fetching host signing token expiry: {e}")
+                write_debug(f"Error while fetching host signing token expiry: {e}")
                 return None
 
         return self.host_signing_token_expiry
@@ -107,6 +112,8 @@ class  MetricsController(RestController):
 
     @expose(content_type='text/plain')
     def get(self):
+        write_debug("get /metrics called")
+
         """
         GET /metrics
         """
@@ -117,6 +124,7 @@ class  MetricsController(RestController):
             current_time = time.time()
             g_ca_cert_expiry_time.set(int(ca_cert_expiry_time))
             g_host_signing_token_expiry.set(host_signing_token_expiry)
+            write_debug("get /metricc set token gauges")
             if ca_cert_expiry_time - current_time < CONF['refresh_period']:
                 g_ca_cert_refresh_needed.set(1)
             else:
