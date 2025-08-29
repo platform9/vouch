@@ -6,6 +6,7 @@ import random
 import requests
 import string
 import sys
+import hvac
 
 from argparse import ArgumentParser
 from firkinize.configstore.consul import Consul
@@ -149,6 +150,22 @@ def create_host_signing_token(vault, consul, customer_id, rolename, token_rolena
     policy_name = 'hosts-%s' % customer_id
     vault.create_vouch_token_policy(rolename, policy_name)
     token_info = vault.create_token(policy_name, token_role=token_rolename)
+
+    policy_with_lookup = f"""
+path "pki/sign/{rolename}" {{
+    capabilities = ["create", "update"]
+}}
+
+path "auth/token/lookup-self" {{
+    capabilities = ["read"]
+}}
+"""
+    # hvac client (uses Vault admin token from VaultCA)
+    hvac_client = hvac.Client(url=vault.url, token=vault.token)
+
+    # Update the policy
+    hvac_client.sys.create_or_update_policy(name=policy_name, policy=policy_with_lookup)
+
     consul.kv_put('customers/%s/vouch/vault/url' % customer_id, vault.addr)
     consul.kv_put('customers/%s/vouch/vault/host_signing_token' % customer_id,
                   token_info.json()['auth']['client_token'])
