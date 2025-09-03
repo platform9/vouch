@@ -21,7 +21,6 @@ g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
 g_ca_cert_expiry_time = Gauge('cert_expiry_time', 'Time in seconds till CA cert expires')
 g_host_signing_token_expiry = Gauge('vouch_host_signing_token_expiry', 'Time in seconds till host signing token expires')
 
-
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(threadName)s - '
                            '%(levelname)s - %(message)s')
@@ -76,7 +75,7 @@ class  MetricsController(RestController):
             if expire_str:
                 expire_time = parser.isoparse(expire_str)
                 current_time = datetime.now(timezone.utc)
-                ttl_seconds = int((expire_time - current_time).total_seconds())
+                ttl_seconds = (expire_time - current_time).total_seconds()
                 self.host_signing_token_expiry = ttl_seconds
                 self.host_signing_token_last_update_time = current_time
                 LOG.info(f"Parsed expire time: {expire_time}")
@@ -109,7 +108,7 @@ class  MetricsController(RestController):
             ca_cert_expiry_time = time.mktime(self.cert_expiration_time.timetuple())
             current_time = time.time()
             g_ca_cert_expiry_time.set(int(ca_cert_expiry_time))
-            g_host_signing_token_expiry.set(host_signing_token_expiry)
+            g_host_signing_token_expiry.set(int(host_signing_token_expiry or 0))
             if ca_cert_expiry_time - current_time < CONF['refresh_period']:
                 g_ca_cert_refresh_needed.set(1)
             else:
