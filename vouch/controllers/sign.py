@@ -110,6 +110,7 @@ class CertController(RestController):
                 pecan.response.status = e.response.status_code
                 pecan.response.json = e.response.json()
 
+        LOG.info('Signing CSR response: %s', pecan.response)
         return pecan.response
 
 
