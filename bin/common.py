@@ -113,41 +113,6 @@ def random_string(length=16):
                    [random.SystemRandom().choice(secret_chars)
                     for _ in range(length - 1)])
 
-
-def add_keystone_user(consul, customer_uuid):
-    """
-    Add configuration to both the vouch and keystone spaces. Will not
-    overwrite existing user parameters. All in a single consul transaction.
-    """
-    # FIXME: The user appears twice to match the pattern of other services that
-    # need a keystone user. Since confd can't look outside its prefix, the user
-    # needs to be both in the region and the global keystone area. consul-template
-    # will help with this. Since vouch is actually in the global space, this isn't
-    # a problem, but I'm going to follow this pattern now until I can come up with
-    # a better solution for the general problem.
-    keystone_prefix = 'keystone/users/vouch/'
-    vouch_prefix = 'vouch/keystone_user/'
-    with consul.prefix('customers/%s' % customer_uuid):
-        try:
-            password = consul.kv_get('%spassword' % keystone_prefix)
-            LOG.info('Using existing keystone password...')
-        except requests.HTTPError as e:
-            if e.response.status_code == 404:
-                LOG.info('Generating new keystone password...')
-                password = random_string()
-            else:
-                raise
-
-        updates = {}
-        for prefix in [keystone_prefix, vouch_prefix]:
-            updates[prefix + 'email'] = 'vouch'
-            updates[prefix + 'password'] = password
-            updates[prefix + 'project'] = 'services'
-            updates[prefix + 'role'] = 'admin'
-        consul.kv_put_txn(updates)
-        LOG.info('Added vouch user')
-
-
 def fabricate_missing_data(consul, customer_uuid, region_uuid):
 
     LOG.info(f'fabricating regional vouch config for {region_uuid}')
@@ -244,51 +209,3 @@ def get_vault_admin_client(consul, customer_uuid):
         token = consul.kv_get('admin_token')
 
     return VaultCA(url, token, ca_name, ca_common_name)
-
-
-def create_host_signing_role(vault, consul, customer_id, region_id) -> str:
-    rolename = 'hosts-%s' % region_id
-    customer_key: str = f'customers/{customer_id}/regions/{region_id}/services/vouch/ca_signing_role'
-    try:
-        val = consul.kv_get(customer_key)
-        LOG.debug('kv_get for %s returned: %s', customer_key, val)
-        if val == rolename:
-            return rolename
-    except HTTPError as err:
-        if err.response.status_code != 404:
-            LOG.error('cannot do kv_get on %s', customer_key, exc_info=err)
-            raise err
-    # either a) the signing role hasn't been created, or b) it has a customer-level one
-    # older signing roles were hosts-{customer_id} not hosts-{region_id}
-    vault.create_signing_role(rolename)
-    consul.kv_put(customer_key, rolename)
-    return rolename
-
-
-def create_host_signing_token(vault, consul, customer_id, region_uuid, rolename, token_rolename='vouch-hosts'):
-    policy_name = 'hosts-%s' % region_uuid
-
-    customer_vault_url: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/url'
-    customer_vault_hsk: str = f'customers/{customer_id}/regions/{region_uuid}/services/vouch/vault/host_signing_token'
-
-    vault.create_vouch_token_policy(rolename, policy_name)
-    token_info = vault.create_token(policy_name, token_role=token_rolename)
-    consul.kv_put(customer_vault_url, vault.addr)
-    consul.kv_put(customer_vault_hsk, token_info.json()['auth']['client_token'])
-
-
-def parse():
-    args = parse_args()
-    config_url = args.config_url or os.environ.get('CONSUL_HTTP_ADDR', None)
-    token = args.config_token or os.environ.get('CONSUL_HTTP_TOKEN', None)
-    consul = Consul(config_url, token=token)
-    return args, consul
-
-def new_token(consul, customer_id):
-    # obtain the region_id from the environment. We do not want to change the
-    # signature of this function since it is called from outside.
-    region_id = os.environ['REGION_ID']
-
-    vault = get_vault_admin_client(consul, customer_id)
-    rolename = create_host_signing_role(vault, consul, customer_id, region_id)
-    create_host_signing_token(vault, consul, customer_id, region_id, rolename)

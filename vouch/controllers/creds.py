@@ -2,14 +2,15 @@
 
 import logging
 import pecan
-import re
 
 from pecan import expose
 from pecan.rest import RestController
 
+import base64
+from kubernetes import client as kclient
+from kubernetes import config as kconfig
+
 from vouch.conf import CONF
-from firkinize.configstore.consul import Consul
-import requests
 
 LOG = logging.getLogger(__name__)
 
@@ -28,11 +29,7 @@ def _json_error_response(response, code, exc):
 
 class ListCredsController(RestController):
     def __init__(self):
-        self._consul = Consul(
-            CONF['consul_url'],
-            CONF['consul_token'],
-        )
-        self._prefix = 'customers/%s' % (CONF['customer_id'])
+        pass
 
     @expose('json')
     def get(self, user):
@@ -43,18 +40,21 @@ class ListCredsController(RestController):
         :returns: 200 with the credentials
         """
         LOG.info('Fetching credentials for user')
+
+        kconfig.load_kube_config()
+        v1 = kclient.CoreV1Api()
+
         try:
-            creds =  self._consul.kv_get(self._prefix+ '/keystone/users/%s/password' % user)
-            pecan.response.status = 200
-            pecan.response.json = creds
-        except requests.exceptions.HTTPError as e:
-            if e.response is not None and e.response.status_code == 404:
-                LOG.error('Credentials not found for user: %s', user)
-                return _json_error_response(pecan.response, 404, f'Credentials not found for user: {user}')
-            else:
-                LOG.error('HTTP error while fetching credentials: %s', e)
-                return _json_error_response(pecan.response, 500, str(e)) 
-        except Exception as e:
-            LOG.error('Could not fetch credential from consul', e)
-            return _json_error_response(pecan.response, 500, e)
+            secret = v1.read_namespaced_secret('keystone-creds-' + user, CONF['namespace'])
+        except kclient.ApiException as e:
+            # TODO: differentiate 404 from 500s
+            LOG.error('Error while fetching credentials: %s', e)
+            return _json_error_response(pecan.response, 500, str(e))
+
+        encoded_password = secret.data['password']
+        decoded_password = base64.b64decode(encoded_password).decode('utf-8')
+
+        pecan.response.status = 200
+        pecan.response.json = decoded_password
+
         return pecan.response

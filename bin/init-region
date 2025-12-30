@@ -1,11 +1,9 @@
 #!/bin/env python
 
-from common import sys, parse, add_keystone_user, new_token
+import sys
 
 def main():
-    args, consul = parse()
-    add_keystone_user(consul, args.customer_id)
-    new_token(consul, args.customer_id)
+    return 0
 
 if __name__ == '__main__':
     sys.exit(main())

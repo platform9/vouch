@@ -8,20 +8,69 @@ from cryptography.hazmat.backends import default_backend
 from pecan import expose
 from pecan.rest import RestController
 
+import base64
+from kubernetes import client as kclient
+from kubernetes import config as kconfig
+import json
+
 from vouch.conf import CONF
 from vaultlib.ca import VaultCA
 
 
 LOG = logging.getLogger(__name__)
 
+# return the root CA
+def get_ca_data():
+
+    kconfig.load_kube_config()
+    v1 = kclient.CoreV1Api()
+    coa = kclient.CustomObjectsApi()
+
+    namespace = os.environ["NAMESPACE"]
+
+    cm = v1.read_namespaced_config_map("ca_versions", 'x-' + namespace)
+    current_ca_name = cm['data']['current_ca_name']
+
+    issuer = coa.get_namespaced_custom_object(
+        group='cert-manager.io',
+        version='v1',
+        namespace='x-' + namespace,
+        plural='issuers',
+        name=current_ca_name)
+
+    secret_name = issuer['spec']['ca']['secretName']
+
+    secret = v1.read_namespaced_secret(secret_name, 'x-' + namespace)
+
+    reply = {}
+    reply['revocation_time'] = 0
+    reply['revocation_time_rfc3339'] = ''
+    reply['certificate'] = secret['data']['ca.crt']
+
+    return reply
+
+# replace the root CA
+def refresh_ca_data():
+
+    kconfig.load_kube_config()
+    v1 = kclient.CoreV1Api()
+    coa = kclient.CustomObjectsApi()
+
+    namespace = os.environ["NAMESPACE"]
+
+    cm = v1.read_namespaced_config_map("ca_versions", 'x-' + namespace)
+    current_ca_name = cm['data']['current_ca_name']
+
+    reply = {}
+    return reply
+
+def sign_csr():
+
+    pass
+
 class CAController(RestController):
     def __init__(self):
-        self._vault = VaultCA(
-            CONF['vault_addr'],
-            CONF['vault_token'],
-            CONF['ca_name'],
-            CONF['ca_common_name'],
-        )
+        pass
 
     @expose('json')
     def get(self):
@@ -29,12 +78,12 @@ class CAController(RestController):
         GET /v1/sign/ca
         Get the CA cert of the currently configured CA
         """
-        ca_name = CONF['ca_name']
-        LOG.info('Fetching current ca certificate for %s.', ca_name)
+
+        LOG.info('Fetching current ca certificate')
         try:
-            resp = self._vault.get_ca()
+            reply = get_ca_data()
             pecan.response.status = 200
-            pecan.response.json = resp.json()['data']
+            pecan.response.json = json.dumps(reply)
             LOG.info('status: 200')
         except requests.HTTPError as e:
             pecan.response.status = e.response.status_code
@@ -54,12 +103,12 @@ class CAController(RestController):
         ca_name = CONF['ca_name']
         ca_common_name = CONF['ca_common_name']
 
-        LOG.info('Refreshing ca certificate for %s.', ca_name)
+        LOG.info('Refreshing ca certificate')
         try:
-            resp_old = self._vault.get_ca()
-            resp_json['previous'] = resp_old.json()['data']
-            resp_new = self._vault.new_ca_root(ca_common_name)
-            resp_json['new'] = resp_new.json()['data']
+            old_cert_data = get_ca_data()
+            resp_json['previous'] = json.dumps(old_cert_data)
+            new_cert_data = refresh_ca_data()
+            resp_json['new'] = json.dumps(new_cert_data)
             pecan.response.status = 200
             pecan.response.json = resp_json
             LOG.info('status: 200')
@@ -73,12 +122,7 @@ class CAController(RestController):
 
 class CertController(RestController):
     def __init__(self):
-        self._vault = VaultCA(
-            CONF['vault_addr'],
-            CONF['vault_token'],
-            CONF['ca_name'],
-            CONF['ca_common_name'],
-        )
+        pass
 
     @expose('json')
     def post(self):
