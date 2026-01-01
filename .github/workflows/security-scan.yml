@@ -4,6 +4,7 @@ name: Python Security scan
     branches:
       - main
       - private/harsh/soc2-scan
+      - private/soc2
   pull_request:
 
 jobs:
