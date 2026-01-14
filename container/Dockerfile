@@ -4,6 +4,10 @@ RUN apk update && apk add bash \
     && apk add curl \
     && rm -vrf /var/cache/apk/*
 
+RUN apk add --no-cache curl unzip \
+    && curl -s -o /root/kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.21.14/2023-01-30/bin/linux/amd64/kubectl \
+    && chmod +x /root/kubectl
+
 # install vouch
 COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
 RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \

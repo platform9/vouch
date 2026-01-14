@@ -1,6 +1,8 @@
 # pylint: disable=too-few-public-methods
 
+import base64
 import logging
+import os
 import pecan
 import re
 
@@ -8,7 +10,9 @@ from pecan import expose
 from pecan.rest import RestController
 
 from vouch.conf import CONF
-from firkinize.configstore.consul import Consul
+
+from kubernetes import client as kclient
+from kubernetes import config as kconfig
 
 LOG = logging.getLogger(__name__)
 
@@ -27,11 +31,7 @@ def _json_error_response(response, code, exc):
 
 class ListCAController(RestController):
     def __init__(self):
-        self._consul = Consul(
-            CONF['consul_url'],
-            CONF['consul_token'],
-        )
-        self._prefix = 'customers/%s/regions/%s' % (CONF['customer_id'], CONF['region_id'])
+        pass
 
     @expose('json')
     def get(self):
@@ -39,18 +39,35 @@ class ListCAController(RestController):
         GET /v1/cas
         Get the list of all active root CAs
         """
+
         LOG.info('Fetching list of current ca certificates')
+
         try:
-            certs =  self._consul.kv_get_prefix(self._prefix+ '/certs')
-            active_ca = []
-            for k in certs:
-                pattern = '^'+ self._prefix +'/certs/v\d+/ca/cert$'
-                if re.search(pattern,k):
-                    active_ca.append(certs[k])
-            pecan.response.status = 200
-            pecan.response.json = active_ca
-        except Exception as e:
-            LOG.error('Could not fetch CA certs from consul', e)
-            return _json_error_response(pecan.response, 500, e)
+            kconfig.load_kube_config()
+        except kconfig.ConfigException:
+            kconfig.load_incluster_config()
+
+        v1 = kclient.CoreV1Api()
+        namespace = os.environ["NAMESPACE"]
+
+        active_ca = []
+        try:
+            secrets = v1.list_namespaced_secret(namespace=namespace)
+        except:
+            LOG.error('Could not fetch CA certs from kubernetes:', e)
             pecan.response.status = 500
+            return _json_error_response(pecan.response, 500, e)
+
+        if secrets and secrets.items:
+
+            pattern = '^v\d+-ca-secret$'
+            for secret in secrets.items:
+                if re.search(pattern, secret.metadata.name):
+                    data_b64 = secrets.data["ca.crt"]
+                    data = base64.b64decode(data_b64)
+                    active_ca.append(str(data))
+
+        pecan.response.status = 200
+        pecan.response.json = active_ca
+
         return pecan.response

@@ -1,12 +1,12 @@
 # pylint: disable=too-few-public-methods
 
+import base64
 import logging
 import pecan
 
 from pecan import expose
 from pecan.rest import RestController
 
-import base64
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
