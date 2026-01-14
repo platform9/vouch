@@ -54,20 +54,6 @@ def get_latest_ca_cert():
     else:
         return None, None
 
-def generate_new_ca():
-
-    """
-    apiVersion: cert-manager.io/v1
-    kind: Issuer
-    metadata:
-      name: v1-ca-issuer
-        namespace: tdell-csr
-        spec:
-          selfSigned: {}
-    """
-
-    pass
-
 def create_new_ca(name):
 
     try:
@@ -147,3 +133,17 @@ def create_new_ca(name):
         if now - start > TIMEOUT:
             raise("failed to obtain new CA certificate")
         time.sleep(1)
+
+func sign_csr(csr, common_name, ip_sans, alt_names, ttl):
+
+    pass
+
+
+"""
+signing role:
+
+'key_bits': 2048,
+'allow_any_name': True,
+'use_csr_sans': False,
+'use_csr_common_name': False
+"""

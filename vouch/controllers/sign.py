@@ -44,9 +44,9 @@ def refresh_ca_data():
     new_ca_name = 'v%d-ca' % new_version
     cert = create_new_ca(new_ca_name)
 
-    namespace = os.environ["NAMESPACE"]
-
     reply = {}
+    reply['certificate'] = cert
+
     return reply
 
 def sign_csr():
