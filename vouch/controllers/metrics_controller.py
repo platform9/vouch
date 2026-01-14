@@ -10,11 +10,12 @@ from pecan import expose
 from pecan.rest import RestController
 
 from vouch.conf import CONF
-from vaultlib.ca import VaultCA
 from prometheus_client import generate_latest, Gauge
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
+
+from vouch.controllers.utils import get_latest_ca_cert
 
 # Exporter gauges
 g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
@@ -41,10 +42,10 @@ def get_latest_ca_cert():
         secrets = v1.list_namespaced_secret(namespace=namespace)
     except:
         LOG.error('could not fetch CA certs from kubernetes:', e)
-        return None
+        return None, None
 
     if not secrets or not secrets.items:
-        return None
+        return None, None
 
     pattern = '^v(\d+)-ca-secret$'
     for secret in secrets.items:
@@ -58,26 +59,20 @@ def get_latest_ca_cert():
 
     if latest_ca_cert:
         c = x509.load_pem_x509_certificate(latest_ca_cert.encode('utf-8'),default_backend())
-        return c
+        return c, latest_ca_version
     else:
-        return None
+        return None, None
 
-def query_vault(vault):
-    resp = vault.get_ca()
-    cert = resp.json()['data']['certificate']
-    c=x509.load_pem_x509_certificate(cert.encode('utf-8'),default_backend())
-    return c
-    
 class  MetricsController(RestController):
     def __init__(self):
         self.last_update_time = time.time()
-        cert = get_latest_ca_cert()
+        cert, _ = get_latest_ca_cert()
         self.cert_expiration_time = cert.not_valid_after
 
     def get_cert_expiration_time(self):
         current_time = time.time()
         if ((current_time - self.last_update_time) > CONF['vault_query_interval']):
-            cert = get_latest_ca_cert()
+            cert, _ = get_latest_ca_cert()
             self.cert_expiration_time = cert.not_valid_after
             self.last_update_time = current_time
         return self.cert_expiration_time

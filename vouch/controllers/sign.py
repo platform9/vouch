@@ -14,7 +14,7 @@ from kubernetes import config as kconfig
 import json
 
 from vouch.conf import CONF
-from vaultlib.ca import VaultCA
+from vouch.controllers.utils import get_latest_ca_cert
 
 
 LOG = logging.getLogger(__name__)
@@ -22,30 +22,12 @@ LOG = logging.getLogger(__name__)
 # return the root CA
 def get_ca_data():
 
-    kconfig.load_kube_config()
-    v1 = kclient.CoreV1Api()
-    coa = kclient.CustomObjectsApi()
-
-    namespace = os.environ["NAMESPACE"]
-
-    cm = v1.read_namespaced_config_map("ca_versions", 'x-' + namespace)
-    current_ca_name = cm['data']['current_ca_name']
-
-    issuer = coa.get_namespaced_custom_object(
-        group='cert-manager.io',
-        version='v1',
-        namespace='x-' + namespace,
-        plural='issuers',
-        name=current_ca_name)
-
-    secret_name = issuer['spec']['ca']['secretName']
-
-    secret = v1.read_namespaced_secret(secret_name, 'x-' + namespace)
+    latest_ca, version = get_latest_ca_cert()
 
     reply = {}
     reply['revocation_time'] = 0
     reply['revocation_time_rfc3339'] = ''
-    reply['certificate'] = secret['data']['ca.crt']
+    reply['certificate'] = latest_ca
 
     return reply
 
@@ -56,10 +38,13 @@ def refresh_ca_data():
     v1 = kclient.CoreV1Api()
     coa = kclient.CustomObjectsApi()
 
-    namespace = os.environ["NAMESPACE"]
+    latest_ca, version = get_latest_ca_cert()
+    new_version = version + 1
 
-    cm = v1.read_namespaced_config_map("ca_versions", 'x-' + namespace)
-    current_ca_name = cm['data']['current_ca_name']
+    new_ca_name = 'v%d-ca' % new_version
+    cert = create_new_ca(new_ca_name)
+
+    namespace = os.environ["NAMESPACE"]
 
     reply = {}
     return reply
