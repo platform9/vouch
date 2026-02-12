@@ -22,7 +22,7 @@ LOG = logging.getLogger(__name__)
 # return the root CA
 def get_ca_data():
 
-    latest_ca, version = get_latest_ca_cert()
+    latest_ca, _, version = get_latest_ca_cert()
 
     reply = {}
     reply['revocation_time'] = 0
@@ -38,7 +38,7 @@ def refresh_ca_data():
     v1 = kclient.CoreV1Api()
     coa = kclient.CustomObjectsApi()
 
-    latest_ca, version = get_latest_ca_cert()
+    latest_ca, _, version = get_latest_ca_cert()
     new_version = version + 1
 
     new_ca_name = 'v%d-ca' % new_version
@@ -85,8 +85,6 @@ class CAController(RestController):
         new one.
         """
         resp_json = {}
-        ca_name = CONF['ca_name']
-        ca_common_name = CONF['ca_common_name']
 
         LOG.info('Refreshing ca certificate')
         try:
@@ -126,7 +124,6 @@ class CertController(RestController):
         else:
             csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
             LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
-            ca_name = CONF['ca_name']
             signing_role = CONF['signing_role']
             csr = req['csr']
             common_name = req.get('common_name', None)
