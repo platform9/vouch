@@ -14,8 +14,6 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, NoEncryption
 
-import OpenSSL
-
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 from kubernetes.dynamic import DynamicClient
@@ -76,29 +74,6 @@ def generate_csr(common_name, alt_names, ttl):
     private_key_pem = private_key.private_bytes(Encoding.PEM, PrivateFormat.TraditionalOpenSSL, NoEncryption())
 
     return private_key_pem, csr_pem
-
-
-def generate_csr_old(common_name, alt_names, ttl):
-
-    key = OpenSSL.crypto.PKey()
-    key.generate_key(OpenSSL.crypto.TYPE_RSA, 2048)
-
-    req = OpenSSL.crypto.X509Req()
-    req.get_subject().CN = common_name
-
-    alts = [f"DNS:{name}" for name in alt_names]
-    alt_string = ", ".join(alts).encode("utf-8")
-
-    san_extension = crypto.X509Extension(b"subjectAltName", False, alt_string)
-    req.add_extension([san_extension])
-
-    req.set_pubkey(key)
-    req.sign(key, 'sha256')
-
-    private_key = OpenSSL.crypto.dump_privatekey(OpenSSL.crypto.FILETYPE_PEM, key)
-    csr = OpenSSL.crypto.dump_certificate_request(OpenSSL.crypto.FILETYPE_PEM, req)
-
-    return private_key, csr
 
 
 def get_latest_ca_cert(format='cert'):
