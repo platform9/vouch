@@ -38,7 +38,7 @@ RUN pip install prometheus_client
 COPY etc/ /etc
 COPY scripts/ /
 
-RUN mkdir templates vouch
+RUN mkdir /templates /vouch
 COPY vouch/* /vouch/
 COPY templates/* /templates/
 
