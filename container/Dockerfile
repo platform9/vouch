@@ -21,6 +21,8 @@ RUN apt-get -y install jq
 RUN cd /bin && curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.34.2/2025-11-13/bin/linux/amd64/kubectl
 RUN chmod +x /bin/kubectl
 
+RUN pip install pecan
+RUN pip install paste
 RUN pip install kubernetes
 RUN pip install boto3
 
@@ -34,7 +36,9 @@ RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
 
 COPY etc/ /etc
 COPY scripts/ /
-COPY templates/ /
+
+RUN mkdir templates
+COPY templates/* /templates/
 
 ARG APP_METADATA
 LABEL com.platform9.app_metadata=${APP_METADATA}
