@@ -17,6 +17,8 @@ RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
  && ln -s /usr/local/bin/init-region /root/init-region \
  && ln -s /usr/local/bin/renew-token /root/renew-token
 
+RUN pip install -y kubernetes
+
 COPY etc/ /etc
 COPY scripts/ /
 
