@@ -25,19 +25,21 @@ RUN pip install pecan
 RUN pip install paste
 RUN pip install kubernetes
 RUN pip install boto3
+RUN pip install prometheus_client
 
 # install vouch
-COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
-RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
- /tmp/vault-sdist.tgz \
- && rm -f /tmp/vouch-sdist.tgz /tmp/vault-sdist.tgz \
- && ln -s /usr/local/bin/init-region /root/init-region \
- && ln -s /usr/local/bin/renew-token /root/renew-token
+#COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
+#RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
+# /tmp/vault-sdist.tgz \
+# && rm -f /tmp/vouch-sdist.tgz /tmp/vault-sdist.tgz \
+# && ln -s /usr/local/bin/init-region /root/init-region \
+######### && ln -s /usr/local/bin/renew-token /root/renew-token
 
 COPY etc/ /etc
 COPY scripts/ /
 
-RUN mkdir templates
+RUN mkdir templates vouch
+COPY vouch/* /vouch/
 COPY templates/* /templates/
 
 ARG APP_METADATA

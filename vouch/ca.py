@@ -9,7 +9,7 @@ import re
 from pecan import expose
 from pecan.rest import RestController
 
-from vouch.conf import CONF
+from vouch_conf import CONF
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig

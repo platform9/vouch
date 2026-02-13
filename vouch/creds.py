@@ -10,7 +10,7 @@ from pecan.rest import RestController
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch.conf import CONF
+from vouch_conf import CONF
 
 LOG = logging.getLogger(__name__)
 

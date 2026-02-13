@@ -14,8 +14,8 @@ from pecan.rest import RestController
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch.conf import CONF
-from vouch.controllers.utils import get_latest_ca_cert
+from vouch_conf import CONF
+from cert_utils import get_latest_ca_cert
 
 
 LOG = logging.getLogger(__name__)

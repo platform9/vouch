@@ -9,13 +9,13 @@ from cryptography.hazmat.backends import default_backend
 from pecan import expose
 from pecan.rest import RestController
 
-from vouch.conf import CONF
+from vouch_conf import CONF
 from prometheus_client import generate_latest, Gauge
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch.controllers.utils import get_latest_ca_cert
+from cert_utils import get_latest_ca_cert
 
 # Exporter gauges
 g_ca_cert_refresh_needed = Gauge('refresh_needed', 'Is CA cert refresh needed?')
