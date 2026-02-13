@@ -1,6 +1,7 @@
 
 import base64
 import logging
+import os
 import pecan
 import time
 import requests
@@ -23,7 +24,7 @@ g_ca_cert_expiry_time = Gauge('cert_expiry_time', 'Time in seconds till CA cert 
 
 LOG = logging.getLogger(__name__)
 
-def get_latest_ca_cert():
+def OLD_get_latest_ca_cert():
 
     LOG.info('get_latest_ca_cert')
 
@@ -66,7 +67,7 @@ def get_latest_ca_cert():
 class  MetricsController(RestController):
     def __init__(self):
         self.last_update_time = time.time()
-        cert, _ = get_latest_ca_cert()
+        cert, _, _ = get_latest_ca_cert()
         self.cert_expiration_time = cert.not_valid_after
 
     def get_cert_expiration_time(self):
