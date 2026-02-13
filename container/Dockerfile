@@ -34,6 +34,7 @@ RUN pip install --no-cache-dir /tmp/vouch-sdist.tgz \
 
 COPY etc/ /etc
 COPY scripts/ /
+COPY templates/ /
 
 ARG APP_METADATA
 LABEL com.platform9.app_metadata=${APP_METADATA}
@@ -44,3 +45,5 @@ LABEL com.platform9.build=${BUILD_ID}
 LABEL com.platform9.version="${VERSION}-${BUILD_ID}"
 ARG BRANCH
 LABEL com.platform9.branch=${BRANCH}
+
+ENTRYPOINT ["/vouch.sh"]
