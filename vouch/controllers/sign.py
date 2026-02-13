@@ -1,17 +1,18 @@
 # pylint: disable=too-few-public-methods
 
+import base64
+import json
 import logging
 import pecan
 import requests
+
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from pecan import expose
 from pecan.rest import RestController
 
-import base64
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
-import json
 
 from vouch.conf import CONF
 from vouch.controllers.utils import get_latest_ca_cert
@@ -115,6 +116,10 @@ class CertController(RestController):
         containing a PEM encoded CSR. May also include a list of alt_names,
         ip_sans, and a ttl (e.g. 780h)
         """
+
+        pass
+
+        """
         req = pecan.request.json
         if not 'csr' in req:
             pecan.response.status = 400
@@ -146,6 +151,7 @@ class CertController(RestController):
                 LOG.info('response json: %s', e.response.json())
 
         return pecan.response
+        """
 
 
 class SignController(object):
