@@ -36,12 +36,14 @@ RUN pip install sanic
 # && ln -s /usr/local/bin/init-region /root/init-region \
 ######### && ln -s /usr/local/bin/renew-token /root/renew-token
 
+RUN mkdir -p /templates /vouch /root
+COPY vouch/* /vouch/
+COPY templates/* /templates/
 COPY etc/ /etc
 COPY scripts/ /
 
-RUN mkdir /templates /vouch
-COPY vouch/* /vouch/
-COPY templates/* /templates/
+# init-region must be in this specific place
+COPY scripts/init-region /root/init-region
 
 ARG APP_METADATA
 LABEL com.platform9.app_metadata=${APP_METADATA}
