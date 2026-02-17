@@ -1,20 +1,11 @@
-from v1 import V1Controller
-from metrics_controller import MetricsController
-from pecan import expose
-from pecan.rest import RestController
-
 from vouch_conf import CONF
+from sanic import Sanic, response
 
-class RootController(RestController):
-    v1 = V1Controller()
-    metrics = MetricsController()
-
-    @expose('json')
-    def get(self):
+@app.route("/", methods=["GET"])
+async def root(response):
         """
         Get links to the available versions
         """
         vouch_addr = CONF.get('vouch_addr', 'unknown')
-        return {
-            'v1': '%s/v1' % vouch_addr
-        }
+        reply = { 'v1': '%s/v1' % vouch_addr }
+        return response.json(reply)

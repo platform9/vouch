@@ -26,6 +26,7 @@ RUN pip install paste
 RUN pip install kubernetes
 RUN pip install boto3
 RUN pip install prometheus_client
+RUN pip install sanic
 
 # install vouch
 #COPY vouch-sdist.tgz vault-sdist.tgz /tmp/

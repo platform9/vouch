@@ -2,13 +2,11 @@
 import base64
 import logging
 import os
-import pecan
 import time
 import requests
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from pecan import expose
-from pecan.rest import RestController
+from sanic import Sanic, response
 
 from vouch_conf import CONF
 from prometheus_client import generate_latest, Gauge
@@ -24,46 +22,7 @@ g_ca_cert_expiry_time = Gauge('cert_expiry_time', 'Time in seconds till CA cert 
 
 LOG = logging.getLogger(__name__)
 
-def OLD_get_latest_ca_cert():
-
-    LOG.info('get_latest_ca_cert')
-
-    try:
-        kconfig.load_kube_config()
-    except kconfig.ConfigException:
-        kconfig.load_incluster_config()
-
-    v1 = kclient.CoreV1Api()
-    namespace = os.environ["NAMESPACE"]
-
-    latest_ca_cert = None
-    latest_ca_version = None
-
-    try:
-        secrets = v1.list_namespaced_secret(namespace=namespace)
-    except:
-        LOG.error('could not fetch CA certs from kubernetes:', e)
-        return None, None
-
-    if not secrets or not secrets.items:
-        return None, None
-
-    pattern = '^v(\d+)-ca-secret$'
-    for secret in secrets.items:
-        match = re.search(pattern, secret.metadata.name)
-        if match:
-            version = int(match.group(1))
-            if not latest_ca_version or latest_ca_version < version:
-                data_b64 = secrets.data["ca.crt"]
-                latest_ca_cert = str(base64.b64decode(data_b64))
-                latest_ca_version = version
-
-    if latest_ca_cert:
-        c = x509.load_pem_x509_certificate(latest_ca_cert.encode('utf-8'),default_backend())
-        return c, latest_ca_version
-    else:
-        return None, None
-
+"""
 class  MetricsController(RestController):
     def __init__(self):
         self.last_update_time = time.time()
@@ -80,9 +39,7 @@ class  MetricsController(RestController):
 
     @expose(content_type='text/plain')
     def get(self):
-        """
-        GET /metrics
-        """
+        # GET /metrics
         try:
             self.get_cert_expiration_time()
             ca_cert_expiry_time = time.mktime(self.cert_expiration_time.timetuple())
@@ -98,3 +55,4 @@ class  MetricsController(RestController):
             return pecan.response
         else:
             return generate_latest()
+"""

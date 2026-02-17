@@ -24,10 +24,3 @@ def set_config(config_file):
                 os.path.dirname(config_file), path))
         if not os.path.isfile(CONF[key]):
             raise RuntimeError('Could not find config file %s at %s' % (key, CONF[key]))
-    try:
-        customer_id = os.environ['CUSTOMER_ID']
-        region_id = os.environ['REGION_ID']
-        CONF['customer_id']=customer_id
-        CONF['region_id']=region_id
-    except KeyError as e:
-        raise RuntimeError('Failed to set config, missing environment:', e)

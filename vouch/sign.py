@@ -3,13 +3,12 @@
 import base64
 import json
 import logging
-import pecan
 import requests
+
+from sanic import Sanic, response
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
-from pecan import expose
-from pecan.rest import RestController
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
@@ -50,40 +49,26 @@ def refresh_ca_data():
 
     return reply
 
-def sign_csr():
 
-    pass
-
-class CAController(RestController):
-    def __init__(self):
-        pass
-
-    @expose('json')
-    def get(self):
+@app.route("/v1/sign/ca", methods=["GET"])
+async def get_current_ca(response):
         """
-        GET /v1/sign/ca
         Get the CA cert of the currently configured CA
         """
 
         LOG.info('Fetching current ca certificate')
         try:
             reply = get_ca_data()
-            pecan.response.status = 200
-            pecan.response.json = json.dumps(reply)
             LOG.info('status: 200')
+            return response.json(reply)
         except requests.HTTPError as e:
-            pecan.response.status = e.response.status_code
-            pecan.response.json = e.response.json()
             LOG.info('status: %s', e.response.status_code)
-            LOG.info('response json: %s', e.response.json())
-        return pecan.response
+            raise SanicException("Could not fetch CA certs from kubernetes", status_code=e.response.status_code)
 
-    @expose('json')
-    def post(self):
+@app.route("/v1/sign/ca", methods=["POST"])
+def generate_new_ca_root_cert(response):
         """
-        POST /v1/sign/ca
-        Generate a new CA root certificate. Returns the old one and the
-        new one.
+        Generate a new CA root certificate. Returns the old one and the new one.
         """
         resp_json = {}
 
@@ -93,33 +78,28 @@ class CAController(RestController):
             resp_json['previous'] = json.dumps(old_cert_data)
             new_cert_data = refresh_ca_data()
             resp_json['new'] = json.dumps(new_cert_data)
-            pecan.response.status = 200
-            pecan.response.json = resp_json
             LOG.info('status: 200')
+            return response.json(resp_json)
         except requests.HTTPError as e:
-            pecan.response.status = e.response.status_code
-            pecan.response.json = e.response.json()
             LOG.info('status: %s', e.response.status_code)
             LOG.info('response json: %s', e.response.json())
-        return pecan.response
+            raise SanicException("Unable to refresh CA certificate", status_code=e.response.status_code)
 
 
+"""
 class CertController(RestController):
     def __init__(self):
         pass
 
     @expose('json')
     def post(self):
-        """
-        POST /v1/sign/cert
-        Sign a CSR. Body should at least include the 'csr' attribute
-        containing a PEM encoded CSR. May also include a list of alt_names,
-        ip_sans, and a ttl (e.g. 780h)
-        """
+        # POST /v1/sign/cert
+        # Sign a CSR. Body should at least include the 'csr' attribute
+        # containing a PEM encoded CSR. May also include a list of alt_names,
+        # ip_sans, and a ttl (e.g. 780h)
 
         pass
 
-        """
         req = pecan.request.json
         if not 'csr' in req:
             pecan.response.status = 400
@@ -151,9 +131,4 @@ class CertController(RestController):
                 LOG.info('response json: %s', e.response.json())
 
         return pecan.response
-        """
-
-
-class SignController(object):
-    ca = CAController()
-    cert = CertController()
+"""

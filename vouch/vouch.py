@@ -1,6 +1,20 @@
 #!/usr/bin/env python3
 
-from pecan import Pecan, expose
-from root import RootController
+import os
+from sanic import Sanic, response
 
-app = Pecan(RootController())
+app = Sanic("Vouch")
+
+@app.route("/ping", methods=["GET"])
+async def ping(request):
+    return response.text("pong")
+
+if __name__ == "__main__":
+
+    app_name = os.environ["APP"]
+    if app_name == "vouch-keystone":
+        port = 8448
+    elif app_name == "vouch-noauth":
+        port = 8558
+
+    app.run(host="0.0.0.0", port=port, debug=True)
