@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
 import os
+import logging
 from sanic import Sanic, response
+
+LOG = logging.getLogger(__name__)
 
 app = Sanic("Vouch")
 

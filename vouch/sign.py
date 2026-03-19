@@ -13,7 +13,7 @@ from cryptography.hazmat.backends import default_backend
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch_conf import CONF
+from vouch_conf import CONF, dump_headers
 from cert_utils import get_latest_ca_cert
 
 
@@ -51,11 +51,12 @@ def refresh_ca_data():
 
 
 @app.route("/v1/sign/ca", methods=["GET"])
-async def get_current_ca(response):
+async def get_current_ca(request):
         """
         Get the CA cert of the currently configured CA
         """
 
+        dump_headers(request)
         LOG.info('Fetching current ca certificate')
         try:
             reply = get_ca_data()
@@ -66,10 +67,12 @@ async def get_current_ca(response):
             raise SanicException("Could not fetch CA certs from kubernetes", status_code=e.response.status_code)
 
 @app.route("/v1/sign/ca", methods=["POST"])
-def generate_new_ca_root_cert(response):
+def generate_new_ca_root_cert(request):
         """
         Generate a new CA root certificate. Returns the old one and the new one.
         """
+        dump_headers(request)
+
         resp_json = {}
 
         LOG.info('Refreshing ca certificate')

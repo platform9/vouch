@@ -2,7 +2,7 @@ from vouch_conf import CONF
 from sanic import Sanic, response
 
 @app.route("/", methods=["GET"])
-async def root(response):
+async def root(request):
         """
         Get links to the available versions
         """

@@ -14,7 +14,7 @@ LOG = logging.getLogger(__name__)
 
 
 @app.route("/v1/creds", methods=["GET"])
-def get_keystone_creds(response):
+def get_keystone_creds(request):
         """
         GET /v1/creds/<user>
         Get the keystone credentials for a user

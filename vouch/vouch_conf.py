@@ -2,6 +2,9 @@
 # pylint: disable=global-statement
 import os
 import yaml
+import logging
+
+LOG = logging.getLogger(__name__)
 
 CONF = None
 
@@ -24,3 +27,8 @@ def set_config(config_file):
                 os.path.dirname(config_file), path))
         if not os.path.isfile(CONF[key]):
             raise RuntimeError('Could not find config file %s at %s' % (key, CONF[key]))
+
+def dump_headers(request):
+
+    for key, value in request.headers.items():
+        LOG.info(f"HEADER({key}): {value}")
