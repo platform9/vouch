@@ -13,7 +13,7 @@ async def ping(request):
     return response.text("pong")
 
 @app.route("/v1/zing", methods=["GET"])
-async def ping(request):
+async def zing(request):
     return response.text("zong")
 
 @app.route("/", methods=["GET"])
