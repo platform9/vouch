@@ -13,7 +13,7 @@ from kubernetes import config as kconfig
 LOG = logging.getLogger(__name__)
 
 
-@app.route("/va/cas", methods=["GET"])
+@app.route("/v1/cas", methods=["GET"])
 async def get_cas(request):
         """
         Get the list of all active root CAs

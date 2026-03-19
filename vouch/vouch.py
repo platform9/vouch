@@ -12,6 +12,19 @@ app = Sanic("Vouch")
 async def ping(request):
     return response.text("pong")
 
+@app.route("/v1/zing", methods=["GET"])
+async def ping(request):
+    return response.text("zong")
+
+@app.route("/", methods=["GET"])
+async def root(request):
+    """
+    Get links to the available versions
+    """
+    vouch_addr = CONF.get('vouch_addr', 'unknown')
+    reply = { 'v1': '%s/v1' % vouch_addr }
+    return response.json(reply)
+
 if __name__ == "__main__":
 
     LOG.info("This is Radio Vouch")
