@@ -10,11 +10,12 @@ from vouch_conf import CONF, dump_headers
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
+from sanic.exceptions import SanicException
+
 LOG = logging.getLogger(__name__)
 
 
-@app.route("/v1/cas", methods=["GET"])
-async def get_cas(request):
+def get_cas(request):
         """
         Get the list of all active root CAs
         """
