@@ -10,6 +10,7 @@ from vouch_conf import CONF, dump_headers
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
+from sanic import Sanic, response
 from sanic.exceptions import SanicException
 
 LOG = logging.getLogger(__name__)
