@@ -44,7 +44,7 @@ def get_cas(request):
             pattern = '^v\d+-ca-secret$'
             for secret in secrets.items:
                 if re.search(pattern, secret.metadata.name):
-                    data_b64 = secrets.data["ca.crt"]
+                    data_b64 = secret.data["ca.crt"]
                     data = base64.b64decode(data_b64)
                     active_ca.append(str(data))
 
