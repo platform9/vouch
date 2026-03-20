@@ -6,6 +6,7 @@ import logging
 import requests
 
 from sanic import Sanic, response
+from sanic.exceptions import SanicException
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -13,8 +14,7 @@ from cryptography.hazmat.backends import default_backend
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch_conf import CONF, dump_headers
-from cert_utils import get_latest_ca_cert
+from cert_utils import get_latest_ca_cert, sign_csr
 
 
 LOG = logging.getLogger(__name__)
@@ -22,7 +22,7 @@ LOG = logging.getLogger(__name__)
 # return the root CA
 def get_ca_data():
 
-    latest_ca, _, version = get_latest_ca_cert()
+    latest_ca, _, version = get_latest_ca_cert(format='pem')
 
     reply = {}
     reply['revocation_time'] = 0
@@ -50,13 +50,11 @@ def refresh_ca_data():
     return reply
 
 
-@app.route("/v1/sign/ca", methods=["GET"])
-async def get_current_ca(request):
+def get_current_ca(request):
         """
         Get the CA cert of the currently configured CA
         """
 
-        dump_headers(request)
         LOG.info('Fetching current ca certificate')
         try:
             reply = get_ca_data()
@@ -66,12 +64,10 @@ async def get_current_ca(request):
             LOG.info('status: %s', e.response.status_code)
             raise SanicException("Could not fetch CA certs from kubernetes", status_code=e.response.status_code)
 
-@app.route("/v1/sign/ca", methods=["POST"])
 def generate_new_ca_root_cert(request):
         """
         Generate a new CA root certificate. Returns the old one and the new one.
         """
-        dump_headers(request)
 
         resp_json = {}
 
@@ -88,6 +84,24 @@ def generate_new_ca_root_cert(request):
             LOG.info('response json: %s', e.response.json())
             raise SanicException("Unable to refresh CA certificate", status_code=e.response.status_code)
 
+
+def sign_cert(request):
+
+    j = request.json
+
+    if 'csr' not in j:
+        raise SanicException("Signing request must contain a CSR", status_code=400)
+
+    csr_parsed  = x509.load_pem_x509_csr(str(j['csr']).encode('utf-8'), default_backend())
+    LOG.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
+
+    common_name = j.get('common_name', None)
+    ip_sans = j.get('ip_sans', [])
+    alt_names = j.get('alt_names', [])
+    ttl = j.get("ttl", [])
+
+    cert = sign_csr(csr.encode(), common_name, ip_sans, alt_names, ttl)
+    LOG.info('Generated cert: %s' % cert)
 
 """
 class CertController(RestController):

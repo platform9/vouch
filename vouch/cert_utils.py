@@ -114,7 +114,7 @@ def get_latest_ca_cert(format='cert'):
         if format == 'cert':
             c = x509.load_pem_x509_certificate(bytes(pem.encode("utf-8")),default_backend())
         elif format == 'pem':
-            c = latest_ca_cert
+            c = str(latest_ca_cert.decode())
         return c, latest_ca_key, latest_ca_version
     else:
         return None, None, None
@@ -217,9 +217,6 @@ def create_new_ca(name):
     return cert
 
 
-def sign_csr(csr, common_name, ip_sans, alt_names, ttl):
-
-    pass
 
 
 """
@@ -281,27 +278,27 @@ def get_all_certs():
         match = re.search(pattern, secret.metadata.name)
         if match:
             version = int(match.group(1))
-            cert_name = int(match.group(2))
+            cert_name = match.group(2)
 
             version_name = 'v' + str(version)
             if version_name not in data:
                 data[version_name] = {}
 
             if cert_name == 'ca':
-                cert_b64 = secrets.data["ca.crt"]
+                cert_b64 = secret.data["ca.crt"]
             else:
-                cert_b64 = secrets.data["tls.crt"]
-            key_b64 = secrets.data['tls.key']
+                cert_b64 = secret.data["tls.crt"]
+            key_b64 = secret.data['tls.key']
 
             cert = str(base64.b64decode(cert_b64))
             key = str(base64.b64decode(key_b64))
             data[version_name][cert_name] = { 'cert': cert, 'key': key }
 
             if not latest_ca_version or latest_ca_version < version:
-                latest_ca_version = version_name
+                latest_ca_version = version
 
     if latest_ca_version:
-        data['current_version'] = latest_ca_version
+        data['current_version'] = 'v' + str(latest_ca_version)
 
     return data
 
@@ -321,15 +318,12 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
     private_key, csr = generate_csr(common_name, alt_names, ttl)
 
-    private_key_b64 = base64.b64encode(private_key).decode('utf-8')
-    csr_b64 = base64.b64encode(csr).decode('utf-8')
-
     LOG.info("private_key: %s", private_key)
-    LOG.info("csr: %s", csr)
+    private_key_b64 = base64.b64encode(private_key).decode('utf-8')
+    pk_data = { "tls.key": private_key_b64 }
 
     # create a secret with the private key
 
-    pk_data = { "tls.key": private_key_b64 }
     pk_annotations = { 'cert-manager.io/allow-direct-injection': "true" }
     pk_secret = kclient.V1Secret(
         metadata=kclient.V1ObjectMeta(name=secret_name, annotations=pk_annotations),
@@ -339,6 +333,21 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
     api_response = v1.create_namespaced_secret(namespace=namespace, body=pk_secret)
     # LOG.info(f'create secret response: {api_response}')
+
+    cert = sign_csr(cert_name, csr)
+    return private_key, cert
+
+
+def sign_csr(cert_name, csr, ip_sans=None, alt_names=None, ttl=None):
+
+    # question: are the optional arguments needed?
+
+    if alt_names:
+        san_ext = x509.SubjectAlternativeName([ x509.DNSName(alt) for alt in alt_names ])
+        csr = csr.add_extension(san_ext, critical=False)
+
+    LOG.info("csr: %s", csr)
+    csr_b64 = base64.b64encode(csr).decode('utf-8')
 
     k8s_csr = kclient.V1CertificateSigningRequest(
         api_version="certificates.k8s.io/v1",
@@ -357,28 +366,36 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
     # LOG.info("k8s_csr response: %s", response)
 
-    cmd = ['kubectl', 'certificate', 'approve', cert_name]
-    LOG.info('running: ' + str(cmd))
-    try:
-        result = subprocess.run(cmd, capture_output=True, check=True)
-    except subprocess.CalledProcessError as e:
-        print(f"kubectl command failed with return code {e.returncode}")
-        print("kubectl stderr:", e.stderr)
-    except FileNotFoundError:
-        print("kubectl is not in the PATH")
+    success = False
+    for i in range(5):
+        cmd = ['kubectl', 'certificate', 'approve', cert_name]
+        LOG.info('running: ' + str(cmd))
+        try:
+            result = subprocess.run(cmd, capture_output=True, check=True)
+            success = True
+        except subprocess.CalledProcessError as e:
+            print(f"kubectl command failed with return code {e.returncode}")
+            print("kubectl stderr:", e.stderr)
+        except FileNotFoundError:
+            raise Exception("kubectl is not in the PATH")
+        time.sleep(1+i)
+
+    if not success:
+        raise Exception("unable to approve certificate, please examine log")
 
     cert = None
+    timeout = 120
     start = time.time()
     while True:
         LOG.info("checking if cert is ready")
         csr_body = kcerts_api.read_certificate_signing_request(name=cert_name)
         if csr_body.status.certificate is None:
             now = time.time()
-            if now - start > 60:
-                raise("timed out waiting for certificate creation (60 seconds)")
+            if now - start > timeout:
+                raise(f'timed out waiting for certificate creation ({timeout} seconds)')
             time.sleep(5)
             continue
         cert = base64.b64decode(csr_body.status.certificate)
         break
 
-    return private_key, cert
+    return cert

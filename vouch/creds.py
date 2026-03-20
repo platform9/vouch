@@ -2,38 +2,36 @@
 
 import base64
 import logging
+import os
 
 from sanic import Sanic, response
 
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
-from vouch_conf import CONF
-
 LOG = logging.getLogger(__name__)
 
 
-@app.route("/v1/creds", methods=["GET"])
-def get_keystone_creds(request):
+def get_keystone_creds(request, user):
         """
         GET /v1/creds/<user>
         Get the keystone credentials for a user
         :param user: The user to get the credentials for 
         :returns: 200 with the credentials
         """
-        LOG.info('Fetching credentials for user')
+        LOG.info('Fetching credentials for user:', user)
 
-        kconfig.load_kube_config()
-        v1 = kclient.CoreV1Api()
+        # all keystone passwords should be in the customer secret with this pattern
+        kp_env_var = user.upper() + '_KEYSTONE_PASSWORD'
 
-        try:
-            secret = v1.read_namespaced_secret('keystone-creds-' + user, CONF['namespace'])
-        except kclient.ApiException as e:
-            # TODO: differentiate 404 from 500s
-            LOG.error('Error while fetching credentials: %s', e)
-            raise SanicException("Error fetchingn credentials", status_code=500)
+        # notes from tdell
+        # This function seems like a TERRIBLE idea. If possible, the
+        # credentials should be provided to the consumer as environment
+        # variables. If this is not possible, at the very least this
+        # function should whitelist appropriate usernames.
+        # The only usage I could locate was by Castellan, and that doesn't
+        # seem to be packaged presently.
 
-        encoded_password = secret.data['password']
-        decoded_password = base64.b64decode(encoded_password).decode('utf-8')
+        password = os.environ.get(kp_env_var, "")
 
-        return response.json(decoded_password)
+        return response.json(password)

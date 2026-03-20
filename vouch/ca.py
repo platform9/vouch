@@ -5,8 +5,6 @@ import logging
 import os
 import re
 
-from vouch_conf import CONF, dump_headers
-
 from kubernetes import client as kclient
 from kubernetes import config as kconfig
 
@@ -20,8 +18,6 @@ def get_cas(request):
         """
         Get the list of all active root CAs
         """
-
-        dump_headers(request)
 
         LOG.info('Fetching list of current ca certificates')
 
@@ -47,6 +43,6 @@ def get_cas(request):
                 if re.search(pattern, secret.metadata.name):
                     data_b64 = secret.data["ca.crt"]
                     data = base64.b64decode(data_b64)
-                    active_ca.append(str(data))
+                    active_ca.append(str(data.decode()))
 
         return response.json(active_ca)

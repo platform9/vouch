@@ -8,7 +8,6 @@ from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from sanic import Sanic, response
 
-from vouch_conf import CONF
 from prometheus_client import generate_latest, Gauge
 
 from kubernetes import client as kclient

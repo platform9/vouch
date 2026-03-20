@@ -2,39 +2,70 @@
 
 import os
 import logging
+
 from sanic import Sanic, response
-from vouch_conf import CONF, dump_headers
+
 from ca import get_cas
+from sign import get_current_ca, generate_new_ca_root_cert, sign_cert
+from creds import get_keystone_creds
 
 LOG = logging.getLogger(__name__)
 
 app = Sanic("Vouch")
 
-@app.route("/ping", methods=["GET"])
-async def ping(request):
-    dump_headers(request)
-    return response.text("pong")
+KEYSTONE_PORT = 8448
+NOAUTH_PORT = 8558
 
-@app.route("/v1/zing", methods=["GET"])
-async def zing(request):
-    dump_headers(request)
-    return response.text("zong")
+def dump_headers(request):
+
+    LOG.info(f'request on port {request.server_port}')
+    for key, value in request.headers.items():
+        LOG.info(f'HEADER({key}): {value}')
 
 @app.route("/", methods=["GET"])
 async def root(request):
-    """
-    Get links to the available versions
-    """
+
     dump_headers(request)
-    vouch_addr = CONF.get('vouch_addr', 'unknown')
-    reply = { 'v1': '%s/v1' % vouch_addr }
+    region_fqdn = os.environ["REGION_FQDN"]
+
+    reply = { 'v1': f'https://{region_fqdn}/vouch/v1' }
     return response.json(reply)
+
+@app.route("/ping", methods=["GET"])
+async def ping(request):
+
+    dump_headers(request)
+    return response.text("pong\n")
 
 @app.route("/v1/cas", methods=["GET"])
 async def v1_cas(request):
 
     dump_headers(request)
     return get_cas(request)
+
+@app.route("/v1/sign/ca", methods=["GET"])
+async def v1_get_current_ca(request):
+
+    dump_headers(request)
+    return get_current_ca(request)
+
+@app.route("/v1/sign/ca", methods=["POST"])
+async def v1_generate_new_ca_root_cert(request):
+
+    dump_headers(request)
+    return generate_new_ca_root_cert(request)
+
+@app.route("/v1/sign/cert", methods=["POST"])
+async def v1_sign_cert(request):
+
+    dump_headers(request)
+    return sign_cert(request)
+
+@app.route("/v1/creds/<user>", methods=["GET"])
+async def v1_get_keystone_creds(request, user):
+
+    dump_headers(request)
+    return get_keystone_creds(request, user)
 
 
 if __name__ == "__main__":
@@ -43,10 +74,10 @@ if __name__ == "__main__":
 
     app_name = os.environ["APP"]
     if app_name == "vouch-keystone":
-        port = 8448
+        port = KEYSTONE_PORT
     elif app_name == "vouch-noauth":
-        port = 8558
+        port = NOAUTH_PORT
     else:
-        raise Exception("unknown APP: %s" % app_name)
+        raise Exception(f'unknown APP: "{app_name}"')
 
     app.run(host="0.0.0.0", port=port, debug=True)
