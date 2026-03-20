@@ -4,6 +4,7 @@ import os
 import logging
 from sanic import Sanic, response
 from vouch_conf import CONF, dump_headers
+from ca import get_cas
 
 LOG = logging.getLogger(__name__)
 
