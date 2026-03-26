@@ -334,11 +334,11 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
     api_response = v1.create_namespaced_secret(namespace=namespace, body=pk_secret)
     # LOG.info(f'create secret response: {api_response}')
 
-    cert = sign_csr(cert_name, csr)
+    cert = sign_csr(cert_name, csr, annotations)
     return private_key, cert
 
 
-def sign_csr(cert_name, csr, ip_sans=None, alt_names=None, ttl=None):
+def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None)
 
     namespace = os.environ["NAMESPACE"]
 

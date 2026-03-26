@@ -19,7 +19,7 @@ NOAUTH_PORT = 8558
 
 def dump_headers(request):
 
-    logger.info(f'request on port {request.server_port}')
+    logger.info(f'request on server port {request.server_port}, port {request.port}')
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
 
