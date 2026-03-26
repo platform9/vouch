@@ -111,9 +111,7 @@ def sign_cert(request):
     alt_names = j.get('alt_names', [])
     ttl = j.get("ttl", [])
 
-    # csr_parsed.subject
-
-    cert = sign_csr(cert_name, j['csr'], common_name, ip_sans, alt_names, ttl)
+    cert = sign_csr(cert_name, j['csr'], ip_sans, alt_names, ttl)
     logger.info('Generated cert: %s' % cert)
 
 """
