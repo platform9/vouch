@@ -12,8 +12,8 @@ from creds import get_keystone_creds
 
 LOG = logging.getLogger(__name__)
 
-vouch_keystone_app = Sanic("Vouch Keystone")
-vouch_noauth_app = Sanic("Vouch Noauth")
+vouch_keystone_app = Sanic("vouch-keystone")
+vouch_noauth_app = Sanic("vouch-noauth")
 
 KEYSTONE_PORT = 8448
 NOAUTH_PORT = 8558
