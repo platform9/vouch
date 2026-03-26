@@ -231,9 +231,9 @@ signing role:
 
 def get_wanted_or_max_ttl(ttl):
 
-    if ttl is None:
+    if not ttl:
         # force maximum if none given
-        ttl = "99999h"
+        ttl = 999999
 
     ca, _, latest_version = get_latest_ca_cert()
 

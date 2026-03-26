@@ -19,7 +19,15 @@ NOAUTH_PORT = 8558
 
 def dump_headers(request):
 
-    logger.info(f'request on server port {request.server_port}, port {request.port}')
+    local_port = -1
+    try:
+        address_tuple = request.socket.getsockname()
+        local_port = address_tuple[1]
+    except Exception as e:
+        logger.info(f'SOCKET DATA COLLECTION ERROR: {e}')
+
+    logger.info(f'request on: server port {request.server_port}, port {request.port}, client_port {request.client_port}, socket {request.socket}, local port {local_port}')
+
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
 
