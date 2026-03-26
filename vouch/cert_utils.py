@@ -340,7 +340,7 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
 def sign_csr(cert_name, csr, ip_sans=None, alt_names=None, ttl=None):
 
-    # question: are the optional arguments needed?
+    namespace = os.environ["NAMESPACE"]
 
     if alt_names:
         san_ext = x509.SubjectAlternativeName([ x509.DNSName(alt) for alt in alt_names ])
