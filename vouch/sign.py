@@ -94,6 +94,9 @@ def sign_cert(request):
     if 'csr' not in j:
         raise SanicException("Signing request must contain a CSR", status_code=400)
 
+    if 'csr' not in j:
+        raise SanicException("Signing request must contain a private key. cert-manager requirement.", status_code=400)
+
     csr_parsed  = x509.load_pem_x509_csr(str(j['csr']).encode('utf-8'), default_backend())
     logger.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
 
@@ -106,6 +109,9 @@ def sign_cert(request):
     except Exception as e:
         logger.info(f'error extracting CN: {e}')
 
+    # TODO, make sure this is a legal kubernets resource name
+    # cert_name = sanitize(cert_name)
+
     common_name = j.get('common_name', None)
     ip_sans = j.get('ip_sans', [])
     alt_names = j.get('alt_names', [])
@@ -113,52 +119,10 @@ def sign_cert(request):
 
     annotations = {}
 
-    cert = sign_csr(cert_name, j['csr'], annotations, ip_sans, alt_names, ttl)
+    cert = sign_csr(cert_name, j['csr'], j['private_key'], ip_sans, alt_names, ttl)
     logger.info('Generated cert: %s' % cert)
 
-"""
-class CertController(RestController):
-    def __init__(self):
-        pass
+    issuing_ca, _, _ = get_latest_ca_cert(format='pem')
 
-    @expose('json')
-    def post(self):
-        # POST /v1/sign/cert
-        # Sign a CSR. Body should at least include the 'csr' attribute
-        # containing a PEM encoded CSR. May also include a list of alt_names,
-        # ip_sans, and a ttl (e.g. 780h)
-
-        pass
-
-        req = pecan.request.json
-        if not 'csr' in req:
-            pecan.response.status = 400
-            pecan.response.json = {
-                'error': 'A POST to /v1/sign/cert must include a csr.'
-            }
-        else:
-            csr = x509.load_pem_x509_csr(str(req['csr']).encode('utf-8'), default_backend())
-            LOG.info('Received CSR \'%s\', subject = %s', req['csr'], csr.subject)
-            signing_role = CONF['signing_role']
-            csr = req['csr']
-            common_name = req.get('common_name', None)
-            ip_sans = req.get('ip_sans', [])
-            alt_names = req.get('alt_names', [])
-            # Set the TTL to be a year. We may want to bring this to a lower
-            # value when we have a robust host side certificate handling in
-            # place.
-            ttl = req.get('ttl', '8760h')
-            try:
-                resp = self._vault.sign_csr(signing_role, csr,
-                                            common_name, ip_sans, alt_names, ttl)
-                pecan.response.json = resp.json()['data']
-                pecan.response.status = 200
-                LOG.info('status: 200')
-            except requests.HTTPError as e:
-                pecan.response.status = e.response.status_code
-                pecan.response.json = e.response.json()
-                LOG.info('status: %s', e.response.status_code)
-                LOG.info('response json: %s', e.response.json())
-
-        return pecan.response
-"""
+    reply = { "certificate": cert, "issuing_ca": issuing_ca }
+    return response.json(reply)

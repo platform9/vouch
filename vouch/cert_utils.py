@@ -313,12 +313,25 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
     namespace = os.environ["NAMESPACE"]
 
-    secret_name = cert_name + '-key'
-    annotations = {"experimental.cert-manager.io/private-key-secret-name": secret_name}
-
     v1, kcerts_api, dyn_client = config_kubernetes()
 
     private_key, csr = generate_csr(common_name, alt_names, ttl)
+
+    cert = sign_csr(cert_name, csr, private_key)
+    return private_key, cert
+
+
+def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None):
+
+    v1, kcerts_api, dyn_client = config_kubernetes()
+
+    namespace = os.environ["NAMESPACE"]
+    secret_name = cert_name + '-key'
+
+    annotations = {
+        "experimental.cert-manager.io/private-key-secret-name": secret_name,
+        "platform9/certificate-regime": "ikr"
+    }
 
     LOG.info("private_key: %s", private_key)
     private_key_b64 = base64.b64encode(private_key).decode('utf-8')
@@ -335,16 +348,6 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
     api_response = v1.create_namespaced_secret(namespace=namespace, body=pk_secret)
     # LOG.info(f'create secret response: {api_response}')
-
-    cert = sign_csr(cert_name, csr, annotations)
-    return private_key, cert
-
-
-def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None):
-
-    v1, kcerts_api, dyn_client = config_kubernetes()
-
-    namespace = os.environ["NAMESPACE"]
 
     ttl, latest_version = get_wanted_or_max_ttl(ttl)
     signer_name = 'issuers.cert-manager.io/' + namespace + '.' + 'v' + str(latest_version) + '-ca-issuer'

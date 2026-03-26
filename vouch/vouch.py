@@ -22,6 +22,11 @@ def dump_headers(request):
 
     logger.info(f'request on: server port {request.server_port}, port {request.port}, socket {request.socket}, app {request.app}')
 
+    try:
+       logger.info(f'request on: app {request.app.name}')
+    except:
+        pass
+
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
 
