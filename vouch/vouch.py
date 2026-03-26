@@ -12,8 +12,8 @@ from creds import get_keystone_creds
 
 LOG = logging.getLogger(__name__)
 
-vouch_keystone_app = Sanic("vouch-keystone")
-vouch_noauth_app = Sanic("vouch-noauth")
+app1 = Sanic("vouch-keystone")
+app2 = Sanic("vouch-noauth")
 
 KEYSTONE_PORT = 8448
 NOAUTH_PORT = 8558
@@ -25,7 +25,8 @@ def dump_headers(request):
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
 
-@app.route("/", methods=["GET"])
+@app1.route("/", methods=["GET"])
+@app2.route("/", methods=["GET"])
 async def root(request):
 
     dump_headers(request)
@@ -34,37 +35,43 @@ async def root(request):
     reply = { 'v1': f'https://{region_fqdn}/vouch/v1' }
     return response.json(reply)
 
-@app.route("/ping", methods=["GET"])
+@app1.route("/ping", methods=["GET"])
+@app2.route("/ping", methods=["GET"])
 async def ping(request):
 
     dump_headers(request)
     return response.text("pong\n")
 
-@app.route("/v1/cas", methods=["GET"])
+@app1.route("/v1/cas", methods=["GET"])
+@app2.route("/v1/cas", methods=["GET"])
 async def v1_cas(request):
 
     dump_headers(request)
     return get_cas(request)
 
-@app.route("/v1/sign/ca", methods=["GET"])
+@app1.route("/v1/sign/ca", methods=["GET"])
+@app2.route("/v1/sign/ca", methods=["GET"])
 async def v1_get_current_ca(request):
 
     dump_headers(request)
     return get_current_ca(request)
 
-@app.route("/v1/sign/ca", methods=["POST"])
+@app1.route("/v1/sign/ca", methods=["POST"])
+@app2.route("/v1/sign/ca", methods=["POST"])
 async def v1_generate_new_ca_root_cert(request):
 
     dump_headers(request)
     return generate_new_ca_root_cert(request)
 
-@app.route("/v1/sign/cert", methods=["POST"])
+@app1.route("/v1/sign/cert", methods=["POST"])
+@app2.route("/v1/sign/cert", methods=["POST"])
 async def v1_sign_cert(request):
 
     dump_headers(request)
     return sign_cert(request)
 
-@app.route("/v1/creds/<user>", methods=["GET"])
+@app1.route("/v1/creds/<user>", methods=["GET"])
+@app2.route("/v1/creds/<user>", methods=["GET"])
 async def v1_get_keystone_creds(request, user):
 
     dump_headers(request)
@@ -83,7 +90,7 @@ if __name__ == "__main__":
     else:
         raise Exception(f'unknown APP: "{app_name}"')
 
-    keystone_app.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
-    noauth_app.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)
+    app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
+    app2.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)
 
     Sanic.serve()
