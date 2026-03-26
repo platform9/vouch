@@ -231,6 +231,10 @@ signing role:
 
 def get_wanted_or_max_ttl(ttl):
 
+    if ttl is None:
+        # force maximum if none given
+        ttl = "99999h"
+
     ca, _, latest_version = get_latest_ca_cert()
 
     if isinstance(ttl, str):
@@ -308,8 +312,6 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
     ttl, latest_version = get_wanted_or_max_ttl(ttl)
 
     namespace = os.environ["NAMESPACE"]
-    signer_name = 'issuers.cert-manager.io/' + namespace + '.' + 'v' + str(latest_version) + '-ca-issuer'
-    usages = ['client auth', 'server auth']
 
     secret_name = cert_name + '-key'
     annotations = {"experimental.cert-manager.io/private-key-secret-name": secret_name}
@@ -341,6 +343,11 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None):
 
     namespace = os.environ["NAMESPACE"]
+
+    ttl, latest_version = get_wanted_or_max_ttl(ttl)
+    signer_name = 'issuers.cert-manager.io/' + namespace + '.' + 'v' + str(latest_version) + '-ca-issuer'
+
+    usages = ['client auth', 'server auth']
 
     if alt_names:
         san_ext = x509.SubjectAlternativeName([ x509.DNSName(alt) for alt in alt_names ])
