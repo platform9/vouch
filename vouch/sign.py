@@ -10,6 +10,7 @@ from sanic.exceptions import SanicException
 from sanic.log import logger
 
 from cryptography import x509
+from cryptography.x509.oid import NameOID
 from cryptography.hazmat.backends import default_backend
 
 from kubernetes import client as kclient
@@ -96,12 +97,23 @@ def sign_cert(request):
     csr_parsed  = x509.load_pem_x509_csr(str(j['csr']).encode('utf-8'), default_backend())
     logger.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
 
+    cert_name = 'doot-doot'
+    try:
+        common_name_attr = csr_parsed.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0]
+        common_name_string = common_name_attr.value
+        logger.info(f"Subject Common Name: {common_name_string}")
+        cert_name = common_name_string
+    except Exception as e:
+        logger.info(f'error extracting CN: {e}')
+
     common_name = j.get('common_name', None)
     ip_sans = j.get('ip_sans', [])
     alt_names = j.get('alt_names', [])
     ttl = j.get("ttl", [])
 
-    cert = sign_csr(j['csr'].encode(), common_name, ip_sans, alt_names, ttl)
+    # csr_parsed.subject
+
+    cert = sign_csr(cert_name, j['csr'], common_name, ip_sans, alt_names, ttl)
     logger.info('Generated cert: %s' % cert)
 
 """

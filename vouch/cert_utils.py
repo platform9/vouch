@@ -347,6 +347,10 @@ def sign_csr(cert_name, csr, ip_sans=None, alt_names=None, ttl=None):
         csr = csr.add_extension(san_ext, critical=False)
 
     LOG.info("csr: %s", csr)
+
+    if type(csr) == str:
+        csr = csr.encode()
+
     csr_b64 = base64.b64encode(csr).decode('utf-8')
 
     k8s_csr = kclient.V1CertificateSigningRequest(

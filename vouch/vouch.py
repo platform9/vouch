@@ -4,6 +4,7 @@ import os
 import logging
 
 from sanic import Sanic, response
+from sanic.log import logger
 
 from ca import get_cas
 from sign import get_current_ca, generate_new_ca_root_cert, sign_cert
@@ -18,9 +19,9 @@ NOAUTH_PORT = 8558
 
 def dump_headers(request):
 
-    LOG.info(f'request on port {request.server_port}')
+    logger.info(f'request on port {request.server_port}')
     for key, value in request.headers.items():
-        LOG.info(f'HEADER({key}): {value}')
+        logger.info(f'HEADER({key}): {value}')
 
 @app.route("/", methods=["GET"])
 async def root(request):
