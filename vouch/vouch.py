@@ -12,14 +12,15 @@ from creds import get_keystone_creds
 
 LOG = logging.getLogger(__name__)
 
-app = Sanic("Vouch")
+vouch_keystone_app = Sanic("Vouch Keystone")
+vouch_noauth_app = Sanic("Vouch Noauth")
 
 KEYSTONE_PORT = 8448
 NOAUTH_PORT = 8558
 
 def dump_headers(request):
 
-    logger.info(f'request on: server port {request.server_port}, port {request.port}, socket {request.socket}')
+    logger.info(f'request on: server port {request.server_port}, port {request.port}, socket {request.socket}, app {request.app')
 
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
@@ -82,4 +83,7 @@ if __name__ == "__main__":
     else:
         raise Exception(f'unknown APP: "{app_name}"')
 
-    app.run(host="0.0.0.0", port=port, debug=True)
+    keystone_app.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
+    noauth_app.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)
+
+    Sanic.serve()

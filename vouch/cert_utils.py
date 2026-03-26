@@ -342,6 +342,8 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
 
 def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None):
 
+    v1, kcerts_api, dyn_client = config_kubernetes()
+
     namespace = os.environ["NAMESPACE"]
 
     ttl, latest_version = get_wanted_or_max_ttl(ttl)
