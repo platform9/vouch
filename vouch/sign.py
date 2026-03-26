@@ -7,6 +7,7 @@ import requests
 
 from sanic import Sanic, response
 from sanic.exceptions import SanicException
+from sanic.log import logger
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -93,15 +94,15 @@ def sign_cert(request):
         raise SanicException("Signing request must contain a CSR", status_code=400)
 
     csr_parsed  = x509.load_pem_x509_csr(str(j['csr']).encode('utf-8'), default_backend())
-    LOG.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
+    logger.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
 
     common_name = j.get('common_name', None)
     ip_sans = j.get('ip_sans', [])
     alt_names = j.get('alt_names', [])
     ttl = j.get("ttl", [])
 
-    cert = sign_csr(csr.encode(), common_name, ip_sans, alt_names, ttl)
-    LOG.info('Generated cert: %s' % cert)
+    cert = sign_csr(j['csr'].encode(), common_name, ip_sans, alt_names, ttl)
+    logger.info('Generated cert: %s' % cert)
 
 """
 class CertController(RestController):
