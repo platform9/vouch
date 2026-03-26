@@ -338,7 +338,7 @@ def create_cert(cert_name, common_name, alt_names, ttl='13140h'):
     return private_key, cert
 
 
-def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None)
+def sign_csr(cert_name, csr, annotations, ip_sans=None, alt_names=None, ttl=None):
 
     namespace = os.environ["NAMESPACE"]
 
