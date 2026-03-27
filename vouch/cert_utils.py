@@ -21,6 +21,10 @@ from kubernetes.dynamic import DynamicClient
 LOG = logging.getLogger(__name__)
 
 
+def set_logger(new_logger):
+    LOG = new_logger
+
+
 def config_kubernetes():
 
     try:

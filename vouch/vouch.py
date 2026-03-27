@@ -9,6 +9,7 @@ from sanic.log import logger
 from ca import get_cas
 from sign import get_current_ca, generate_new_ca_root_cert, sign_cert
 from creds import get_keystone_creds
+from cert_utils import set_logger
 
 LOG = logging.getLogger(__name__)
 
@@ -20,12 +21,7 @@ NOAUTH_PORT = 8558
 
 def dump_headers(request):
 
-    logger.info(f'request on: server port {request.server_port}, port {request.port}, socket {request.socket}, app {request.app}')
-
-    try:
-       logger.info(f'request on: app {request.app.name}')
-    except:
-        pass
+    logger.info(f'[{request.app.name}] {request.path}')
 
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
@@ -94,6 +90,8 @@ if __name__ == "__main__":
         port = NOAUTH_PORT
     else:
         raise Exception(f'unknown APP: "{app_name}"')
+
+    set_logger(logger.info)
 
     app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
     app2.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)

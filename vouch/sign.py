@@ -94,22 +94,22 @@ def sign_cert(request):
     if 'csr' not in j:
         raise SanicException("Signing request must contain a CSR", status_code=400)
 
-    if 'csr' not in j:
-        raise SanicException("Signing request must contain a private key. cert-manager requirement.", status_code=400)
+    if 'private_key' not in j:
+        raise SanicException("Signing request must contain a private_key. cert-manager requirement.", status_code=400)
 
     csr_parsed  = x509.load_pem_x509_csr(str(j['csr']).encode('utf-8'), default_backend())
-    logger.info('Received CSR \'%s\', subject = %s', j['csr'], csr_parsed.subject)
+    logger.info(f'Received CSR "{j["csr"]}", subject = "{csr_parsed.subject}"')
 
     cert_name = 'doot-doot'
     try:
         common_name_attr = csr_parsed.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0]
         common_name_string = common_name_attr.value
-        logger.info(f"Subject Common Name: {common_name_string}")
+        logger.info(f'Subject Common Name: {common_name_string}')
         cert_name = common_name_string
     except Exception as e:
         logger.info(f'error extracting CN: {e}')
 
-    # TODO, make sure this is a legal kubernets resource name
+    # TODO, make sure this is a legal kubernetes resource name
     # cert_name = sanitize(cert_name)
 
     common_name = j.get('common_name', None)
@@ -117,12 +117,17 @@ def sign_cert(request):
     alt_names = j.get('alt_names', [])
     ttl = j.get("ttl", [])
 
-    annotations = {}
-
+    logger.info('signing CSR {cert_name}')
     cert = sign_csr(cert_name, j['csr'], j['private_key'], ip_sans, alt_names, ttl)
-    logger.info('Generated cert: %s' % cert)
+    logger.info(f'Generated cert: {cert}')
 
-    issuing_ca, _, _ = get_latest_ca_cert(format='pem')
+    issuing_ca = ""
+    try:
+        issuing_ca, _, _ = get_latest_ca_cert(format='pem')
+    except Exception as e:
+        logger.info('failed getting issuing_ca: {e}')
 
     reply = { "certificate": cert, "issuing_ca": issuing_ca }
+    logger.info(f'reply: {reply}')
+
     return response.json(reply)
