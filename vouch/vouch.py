@@ -148,6 +148,6 @@ if __name__ == "__main__":
     app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT)
     app2.prepare(host="0.0.0.0", port=NOAUTH_PORT)
 
-    Sanic.serve(app1, app2)
+    Sanic.serve()
 
     LOG.info("O, untimely death!")
