@@ -26,9 +26,10 @@ def dump_headers(request):
     for key, value in request.headers.items():
         logger.info(f'HEADER({key}): {value}')
 
+# root, this is used as a test of reachability
+
 @app1.route("/", methods=["GET"])
-@app2.route("/", methods=["GET"])
-async def root(request):
+async def a1_root(request):
 
     dump_headers(request)
     region_fqdn = os.environ["REGION_FQDN"]
@@ -36,44 +37,95 @@ async def root(request):
     reply = { 'v1': f'https://{region_fqdn}/vouch/v1' }
     return response.json(reply)
 
+@app2.route("/", methods=["GET"])
+async def a2_root(request):
+
+    dump_headers(request)
+    region_fqdn = os.environ["REGION_FQDN"]
+
+    reply = { 'v1': f'https://{region_fqdn}/vouch/v1' }
+    return response.json(reply)
+
+# ping
+
 @app1.route("/ping", methods=["GET"])
-@app2.route("/ping", methods=["GET"])
-async def ping(request):
+async def a1_ping(request):
 
     dump_headers(request)
     return response.text("pong\n")
 
+@app2.route("/ping", methods=["GET"])
+async def a2_ping(request):
+
+    dump_headers(request)
+    return response.text("pong\n")
+
+# request list of CAs
+
 @app1.route("/v1/cas", methods=["GET"])
-@app2.route("/v1/cas", methods=["GET"])
-async def v1_cas(request):
+async def a1_v1_cas(request):
 
     dump_headers(request)
     return get_cas(request)
 
+@app2.route("/v1/cas", methods=["GET"])
+async def a2_v1_cas(request):
+
+    dump_headers(request)
+    return get_cas(request)
+
+# get current CA cert
+
 @app1.route("/v1/sign/ca", methods=["GET"])
-@app2.route("/v1/sign/ca", methods=["GET"])
-async def v1_get_current_ca(request):
+async def a1_v1_get_current_ca(request):
 
     dump_headers(request)
     return get_current_ca(request)
 
+@app2.route("/v1/sign/ca", methods=["GET"])
+async def a2_v1_get_current_ca(request):
+
+    dump_headers(request)
+    return get_current_ca(request)
+
+# generate a new CA root cert
+
 @app1.route("/v1/sign/ca", methods=["POST"])
-@app2.route("/v1/sign/ca", methods=["POST"])
-async def v1_generate_new_ca_root_cert(request):
+async def a1_v1_generate_new_ca_root_cert(request):
 
     dump_headers(request)
     return generate_new_ca_root_cert(request)
 
+@app2.route("/v1/sign/ca", methods=["POST"])
+async def a2_v1_generate_new_ca_root_cert(request):
+
+    dump_headers(request)
+    return generate_new_ca_root_cert(request)
+
+# sign a host cert
+
 @app1.route("/v1/sign/cert", methods=["POST"])
-@app2.route("/v1/sign/cert", methods=["POST"])
-async def v1_sign_cert(request):
+async def a1_v1_sign_cert(request):
 
     dump_headers(request)
     return sign_cert(request)
 
+@app2.route("/v1/sign/cert", methods=["POST"])
+async def a2_v1_sign_cert(request):
+
+    dump_headers(request)
+    return sign_cert(request)
+
+# obtain service user credential
+
 @app1.route("/v1/creds/<user>", methods=["GET"])
+async def a1_v1_get_keystone_creds(request, user):
+
+    dump_headers(request)
+    return get_keystone_creds(request, user)
+
 @app2.route("/v1/creds/<user>", methods=["GET"])
-async def v1_get_keystone_creds(request, user):
+async def a2_v1_get_keystone_creds(request, user):
 
     dump_headers(request)
     return get_keystone_creds(request, user)

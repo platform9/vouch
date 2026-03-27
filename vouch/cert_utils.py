@@ -337,7 +337,7 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
         "platform9/certificate-regime": "ikr"
     }
 
-    LOG.info("private_key: %s", private_key)
+    LOG.info(f'private_key: {private_key}')
 
     if type(private_key) == str:
         private_key = private_key.encode()
@@ -371,7 +371,7 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
         san_ext = x509.SubjectAlternativeName([ x509.DNSName(alt) for alt in alt_names ])
         csr = csr.add_extension(san_ext, critical=False)
 
-    LOG.info("csr: %s", csr)
+    LOG.info(f'csr: {csr}')
 
     if type(csr) == str:
         csr = csr.encode()
@@ -388,7 +388,7 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
         )
     )
 
-    LOG.info("k8s_csr: %s", k8s_csr)
+    LOG.info(f'k8s_csr: {k8s_csr}')
 
     response = kcerts_api.create_certificate_signing_request(body=k8s_csr)
 
