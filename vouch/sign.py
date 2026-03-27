@@ -127,6 +127,11 @@ def sign_cert(request):
     except Exception as e:
         logger.info('failed getting issuing_ca: {e}')
 
+    if type(cert) == bytes:
+        cert = cert.decode()
+    if type(issuing_ca) == bytes:
+        issuing_ca = issuing_ca.decode()
+
     reply = { "certificate": cert, "issuing_ca": issuing_ca }
     logger.info(f'reply: {reply}')
 
