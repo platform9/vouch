@@ -49,12 +49,12 @@ async def a2_root(request):
 # ping
 
 @app1.route("/ping", methods=["GET"])
+@app2.route("/ping", methods=["GET"])
 async def a1_ping(request):
 
     dump_headers(request)
-    return response.text("app1 pong\n")
+    return response.text(f'{request.app.name} pong\n')
 
-@app2.route("/ping", methods=["GET"])
 async def a2_ping(request):
 
     dump_headers(request)
@@ -145,8 +145,8 @@ if __name__ == "__main__":
 
     set_logger(logger.info)
 
-    app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
-    app2.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)
+    app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT)
+    app2.prepare(host="0.0.0.0", port=NOAUTH_PORT)
 
     Sanic.serve(app1, app2)
 
