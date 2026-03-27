@@ -338,14 +338,23 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
     }
 
     LOG.info("private_key: %s", private_key)
+
+    if type(private_key) == str:
+        private_key = private_key.encode()
     private_key_b64 = base64.b64encode(private_key).decode('utf-8')
+
     pk_data = { "tls.key": private_key_b64 }
 
     # create a secret with the private key
 
-    pk_annotations = { 'cert-manager.io/allow-direct-injection': "true" }
+    pk_annotations = {
+        "cert-manager.io/allow-direct-injection": "true",
+        "platform9/certificate-regime": "ikr"
+    }
     pk_secret = kclient.V1Secret(
-        metadata=kclient.V1ObjectMeta(name=secret_name, annotations=pk_annotations),
+        metadata=kclient.V1ObjectMeta(
+            name=secret_name,
+            annotations=pk_annotations),
         type="Opaque",
         data=pk_data,
     )
@@ -366,7 +375,6 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
 
     if type(csr) == str:
         csr = csr.encode()
-
     csr_b64 = base64.b64encode(csr).decode('utf-8')
 
     k8s_csr = kclient.V1CertificateSigningRequest(
