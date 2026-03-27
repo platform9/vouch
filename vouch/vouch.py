@@ -145,10 +145,9 @@ if __name__ == "__main__":
 
     set_logger(logger.info)
 
-    if app_name == "vouch-keystone":
-        app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
+    app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT, debug=True)
     app2.prepare(host="0.0.0.0", port=NOAUTH_PORT, debug=True)
 
-    Sanic.serve(app2)
+    Sanic.serve(app1, app2)
 
     LOG.info("O, untimely death!")
