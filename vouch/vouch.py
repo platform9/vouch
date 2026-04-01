@@ -135,14 +135,6 @@ if __name__ == "__main__":
 
     LOG.info("This is Radio Vouch")
 
-    app_name = os.environ["APP"]
-    if app_name == "vouch-keystone":
-        port = KEYSTONE_PORT
-    elif app_name == "vouch-noauth":
-        port = NOAUTH_PORT
-    else:
-        raise Exception(f'unknown APP: "{app_name}"')
-
     set_logger(logger.info)
 
     app1.prepare(host="0.0.0.0", port=KEYSTONE_PORT)

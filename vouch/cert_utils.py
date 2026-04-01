@@ -377,13 +377,14 @@ def sign_csr(cert_name, csr, private_key, ip_sans=None, alt_names=None, ttl=None
         csr = csr.encode()
     csr_b64 = base64.b64encode(csr).decode('utf-8')
 
+    # signerName= instead of signer_name=
     k8s_csr = kclient.V1CertificateSigningRequest(
         api_version="certificates.k8s.io/v1",
         kind="CertificateSigningRequest",
         metadata=kclient.V1ObjectMeta(name=cert_name, namespace=namespace, annotations=annotations),
         spec=kclient.V1CertificateSigningRequestSpec(
             request=csr_b64,
-            signer_name=signer_name,
+            signerName=signer_name,
             usages=usages,
         )
     )
