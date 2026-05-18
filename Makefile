@@ -44,6 +44,8 @@ stage-with-py-container: dist
 stage:
 	$(SRCROOT)/run-staging-in-container.sh && \
 	cp -r $(SRCROOT)/container/* $(STAGE)/
+	mkdir $(STAGE)/vouch
+	cp -r $(SRCROOT)/vouch/* $(STAGE)/vouch/
 
 $(BUILD_DIR):
 	mkdir -p $@
