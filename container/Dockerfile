@@ -22,9 +22,9 @@ RUN cd /bin && curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.3
 RUN chmod +x /bin/kubectl
 
 RUN pip install kubernetes==36.0.1
-RUN pip install prometheus_client
-RUN pip install sanic
-RUN pip install requests
+RUN pip install prometheus_client==0.25.0
+RUN pip install sanic==25.12.0
+RUN pip install requests==2.34.2
 
 # install vouch
 #COPY vouch-sdist.tgz vault-sdist.tgz /tmp/
