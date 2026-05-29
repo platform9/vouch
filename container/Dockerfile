@@ -21,7 +21,7 @@ RUN apt-get -y install jq
 RUN cd /bin && curl -o kubectl https://s3.us-west-2.amazonaws.com/amazon-eks/1.34.2/2025-11-13/bin/linux/amd64/kubectl
 RUN chmod +x /bin/kubectl
 
-RUN pip install kubernetes
+RUN pip install kubernetes==36.0.1
 RUN pip install prometheus_client
 RUN pip install sanic
 RUN pip install requests
