@@ -34,6 +34,11 @@ def config_kubernetes():
         kconfig.load_kube_config()
     except kconfig.ConfigException:
         kconfig.load_incluster_config()
+        # Fix for kubernetes>=36.0.0 key rename:
+        cfg = kclient.Configuration.get_default_copy()
+        if 'authorization' in cfg.api_key and 'BearerToken' not in cfg.api_key:
+          cfg.api_key['BearerToken'] = cfg.api_key['authorization']
+          kclient.Configuration.set_default(cfg)
 
     v1 = kclient.CoreV1Api()
     certs_api = kclient.CertificatesV1Api()
