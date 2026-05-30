@@ -3,7 +3,6 @@ name: Python Security scan
   push:
     branches:
       - main
-      - private/harsh/soc2-scan
   pull_request:
 
 jobs:
@@ -81,6 +80,17 @@ jobs:
           base: ${{ github.ref_name }}
           delete-branch: true
 
+      - name: Close Stale Vulnerability PR (if clean)
+        if: ${{ github.event_name == 'push' && steps.scan.outputs.bandit_high_found == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="auto/bandit-scan/${{ env.SAFE_REF_NAME }}"
+          PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [[ -n "$PR_NUMBER" ]]; then
+            gh pr close "$PR_NUMBER" --repo "${{ github.repository }}" --comment "No HIGH/CRITICAL vulnerabilities found in latest scan on \`${{ github.ref_name }}\`. Closing report."
+          fi
+
       - name: Fail Job If Vulnerabilities Found
         if: ${{ steps.scan.outputs.bandit_high_found == 'true' }}
         run: exit 1
@@ -100,7 +110,7 @@ jobs:
 
       - name: Install Trivy
         env:
-          TRIVY_VERSION: 0.69.3
+          TRIVY_VERSION: 0.70.0
         run: |
           wget -qO trivy.deb "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/trivy_${TRIVY_VERSION}_Linux-64bit.deb"
           sudo dpkg -i trivy.deb
@@ -166,6 +176,17 @@ jobs:
           branch: auto/trivy-scan/${{ env.SAFE_REF_NAME }}
           base: ${{ github.ref_name }}
           delete-branch: true
+
+      - name: Close Stale Vulnerability PR (if clean)
+        if: ${{ github.event_name == 'push' && steps.scan.outputs.trivy_issues_found == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="auto/trivy-scan/${{ env.SAFE_REF_NAME }}"
+          PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [[ -n "$PR_NUMBER" ]]; then
+            gh pr close "$PR_NUMBER" --repo "${{ github.repository }}" --comment "No HIGH/CRITICAL vulnerabilities found in latest scan on \`${{ github.ref_name }}\`. Closing report."
+          fi
 
       - name: Fail Job If Vulnerabilities Found
         if: ${{ steps.scan.outputs.trivy_issues_found == 'true' }}
