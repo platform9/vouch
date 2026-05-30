@@ -3,7 +3,6 @@ name: Python Security scan
   push:
     branches:
       - main
-      - private/harsh/soc2-scan
   pull_request:
 
 jobs:
@@ -177,6 +176,17 @@ jobs:
           branch: auto/trivy-scan/${{ env.SAFE_REF_NAME }}
           base: ${{ github.ref_name }}
           delete-branch: true
+
+      - name: Close Stale Vulnerability PR (if clean)
+        if: ${{ github.event_name == 'push' && steps.scan.outputs.trivy_issues_found == 'false' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BRANCH="auto/trivy-scan/${{ env.SAFE_REF_NAME }}"
+          PR_NUMBER=$(gh pr list --repo "${{ github.repository }}" --head "$BRANCH" --state open --json number --jq '.[0].number')
+          if [[ -n "$PR_NUMBER" ]]; then
+            gh pr close "$PR_NUMBER" --repo "${{ github.repository }}" --comment "No HIGH/CRITICAL vulnerabilities found in latest scan on \`${{ github.ref_name }}\`. Closing report."
+          fi
 
       - name: Fail Job If Vulnerabilities Found
         if: ${{ steps.scan.outputs.trivy_issues_found == 'true' }}
